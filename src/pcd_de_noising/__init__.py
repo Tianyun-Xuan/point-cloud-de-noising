@@ -15,8 +15,8 @@ except PackageNotFoundError:  # pragma: no cover
 finally:
     del version, PackageNotFoundError
 
-from .model import WeatherNet
+from .model import MistNet
 from .pcd_dataset import PCDDataset, PointCloudDataModule
 
 # make pep8 happy. src: https://stackoverflow.com/a/31079085/6942666
-__all__ = ["WeatherNet", "PCDDataset", "PointCloudDataModule"]
+__all__ = ["Mistnet", "PCDDataset", "PointCloudDataModule"]

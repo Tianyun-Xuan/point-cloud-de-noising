@@ -5,8 +5,9 @@ import torch
 from pytorch_lightning import LightningDataModule
 from torch.utils.data import DataLoader, Dataset
 
-DATA_KEYS = ["distance_m_1", "intensity_1"]
-LABEL_KEY = "labels_1"
+DATA_KEYS = ["distance_1", "intensity_1", "distance_2",
+             "intensity_2", "distance_3", "intensity_3"]
+LABEL_KEY = "label"
 
 
 class PCDDataset(Dataset):
@@ -31,33 +32,36 @@ class PCDDataset(Dataset):
     def __getitem__(self, index):
         with h5py.File(self.files[index], "r") as h5_file:
             data = [h5_file[key][()] for key in DATA_KEYS]
-            label = h5_file[LABEL_KEY][()]  # 32 x 400
+            label = h5_file[LABEL_KEY][()]  # 128 * 1200
 
         data = tuple(torch.from_numpy(data) for data in data)
-        data = torch.stack(data)  # 2 x 32 x 400
+        data = torch.stack(data)  # 3 * 128 * 1200
 
-        distance = data[0:1, :, :]  # 1 x 32 x 400
-        reflectivity = data[1:, :, :]  # 1 x 32 x 400
+        distance_1 = data[0:1, :, :]  # 1 * 128 * 1200
+        reflectivity_1 = data[1:2, :, :]  # 1 * 128 * 1200
+        distance_2 = data[2:3, :, :]  # 1 * 128 * 1200
+        reflectivity_2 = data[3:4, :, :]  # 1 * 128 * 1200
+        distance_3 = data[4:5, :, :]  # 1 * 128 * 1200
+        reflectivity_3 = data[5:6, :, :]  # 1 * 128 * 1200
 
-        label = torch.from_numpy(label).long()  # 32 x 400
-        # From the author: "We used the following label mapping for a point:
-        #   0: no label, 100: valid/clear, 101: rain, 102: fog"
-        # We will map these labels to the range [0, 3], where:
-        #   0: no label, 1: valid/clear, 2: rain, 3: fog
+        label = torch.from_numpy(label).long()  # 128 * 1200
         # TODO: Discard 0s? Not going to learn anything useful from them
         #   Might teach the model that adverse weather isn't adverse weather,
         #   because it's labeled as nothing
-        label = torch.where(label == 0, torch.tensor(99), label)
-        label -= 99
+        # label = torch.where(label == 0, torch.tensor(99), label)
+        # label += 99
+
+        # print(distance.shape, reflectivity.shape,
+        #       second_reflectivity.shape, label.shape)
 
         assert (
-            label.shape == distance.shape[1:]
+            label.shape == distance_1.shape[1:]
         ), "Label shape does not match distance shape"
         assert (
-            label.shape == reflectivity.shape[1:]
+            label.shape == reflectivity_1.shape[1:]
         ), "Label shape does not match reflectivity shape"
 
-        return distance, reflectivity, label
+        return distance_1, reflectivity_1, distance_2, reflectivity_2, distance_3, reflectivity_3, label
 
     def __len__(self):
         return len(self.files)
