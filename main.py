@@ -2,6 +2,8 @@ import h5py
 import numpy as np
 
 import cv2
+import os
+import time
 
 color_map = {0: (0, 0, 0),  # black
              1: (0, 0, 255),  # blue -> first echo
@@ -286,10 +288,18 @@ def show_test_result_v1():
 
 def generate_scan_pattern_image(origin_id):
     # X Y Z row col pluse echo theta phi Original_cloud_index
-    mist_array = np.loadtxt("rayz/8/src/{}_t.txt".format(origin_id)).reshape(-1, 10)
     back_array = np.loadtxt("rayz/8/src/{}_b.txt".format(origin_id)).reshape(-1, 10)
+    mist_array = np.loadtxt("rayz/8/src/{}_t.txt".format(origin_id))
 
-    frame_id = np.unique(mist_array[:, -1])
+    if back_array.shape[0] == 0:
+        print("No back array")
+        return
+    if mist_array.shape[0] != 0:
+        mist_array = mist_array.reshape(-1, 10)
+    else:
+        mist_array = np.array([]).reshape(0, 10)
+
+    frame_id = np.unique(back_array[:, -1])
 
     for id in frame_id:
         count_id = np.int32(np.int32(id) + np.int32(origin_id))
@@ -414,7 +424,7 @@ def verify_hdf5(filename):
         cv2.waitKey(0)
 
 
-def show_test_result():
+def show_test_result_v2():
     predictions = np.load("test_predictions.npy")
     labels = np.load("test_labels.npy")
 
@@ -438,7 +448,187 @@ def show_test_result():
         np.savetxt("rayz/res/{}.txt".format(id), frame_array)
 
 
-# for i in range(1430, 1530, 10):
+# for i in range(1850, 1860, 10):
 #     generate_scan_pattern_image(i)
 # verify_hdf5("rayz/train/400.hdf5")
+# show_test_result()
+
+
+def save_as_hdf5(total, save_name):
+
+    image_table = np.zeros((7, 128, 1200))
+    # 用3个bit来编码三次回波是否是水雾的情况
+    for i in range(128):
+        candidate = total[total[:, 3] == i]
+        for j in range(1200):
+
+            points = candidate[candidate[:, 4] == j]
+
+            if points.shape[0] != 0:
+                first_echo = points[points[:, 6] == 0]
+                second_echo = points[points[:, 6] == 1]
+                third_echo = points[points[:, 6] == 2]
+                label = 0
+                if first_echo.shape[0] != 0:
+                    image_table[0, i, j] = np.linalg.norm(first_echo[0, :3])
+                    image_table[1, i, j] = first_echo[0, 4]
+                    if first_echo[0, -1] == 101:
+                        label = label | 1
+                if second_echo.shape[0] != 0:
+                    image_table[2, i, j] = np.linalg.norm(second_echo[0, :3])
+                    image_table[3, i, j] = second_echo[0, 4]
+                    if second_echo[0, -1] == 101:
+                        label = label | 2
+                if third_echo.shape[0] != 0:
+                    image_table[4, i, j] = np.linalg.norm(third_echo[0, :3])
+                    image_table[5, i, j] = third_echo[0, 4]
+                    if third_echo[0, -1] == 101:
+                        label = label | 4
+                image_table[6, i, j] = label
+
+    # # 生成图像 7 * 128 * 1200
+    # # distance_1 intensity_1 distance_2 intensity_2 distance_3 intensity_3 label
+    # # use cv2 to show the 7 channels
+    # cv2.imshow("distance_1", image_table[0])
+    # cv2.imshow("intensity_1", image_table[1])
+    # cv2.imshow("distance_2", image_table[2])
+    # cv2.imshow("intensity_2", image_table[3])
+    # cv2.imshow("distance_3", image_table[4])
+    # cv2.imshow("intensity_3", image_table[5])
+    # cv2.imshow("label", image_table[6])
+
+    # # use color_map to show the label
+    # label_to_show = np.zeros((pixel_row, pixel_col, 3), dtype=np.uint8)
+    # for i in range(pixel_row):
+    #     for j in range(pixel_col):
+    #         label_to_show[i, j] = color_map[image_table[6, i, j]]
+    # cv2.imshow("label", label_to_show)
+    # cv2.waitKey(0)
+
+    with h5py.File(save_name, "w", driver='core') as hdf5:
+        hdf5.create_dataset('distance_1', data=image_table[0].reshape(
+            128, 1200), dtype=np.float32)
+        hdf5.create_dataset('intensity_1', data=image_table[1].reshape(
+            128, 1200), dtype=np.float32)
+        hdf5.create_dataset('distance_2', data=image_table[2].reshape(
+            128, 1200), dtype=np.float32)
+        hdf5.create_dataset('intensity_2', data=image_table[3].reshape(
+            128, 1200), dtype=np.float32)
+        hdf5.create_dataset('distance_3', data=image_table[4].reshape(
+            128, 1200), dtype=np.float32)
+        hdf5.create_dataset('intensity_3', data=image_table[5].reshape(
+            128, 1200), dtype=np.float32)
+        hdf5.create_dataset('label', data=image_table[6].reshape(
+            128, 1200), dtype=np.float32)
+
+
+def process():
+    # txt -> hdf5
+
+    dir = "/Users/xavier/Documents/calibration/data/txt/shuiwu_8"
+    hdf5_dir = "rayz/test"
+    origin_dir = "rayz/origin"
+    # h_angle, v_angle, range, pluse, echo, row, col
+    kRangeResolution = 0.008
+
+    already = os.listdir(hdf5_dir)
+    filelist = os.listdir(dir)
+
+    # remove already processed files
+    for file in already:
+        filelist.remove(file.split(".")[0] + ".txt")
+
+    for filename in filelist:
+        id = int(filename.split(".")[0])
+        filename = os.path.join(dir, filename)
+
+        txt_data = np.loadtxt(filename).reshape(-1, 7)
+
+        # X Y Z row col pluse echo theta phi Original_cloud_index
+        data_to_save = np.zeros((txt_data.shape[0], 10))
+
+        data_to_save[:, 7] = txt_data[:, 1].astype(
+            np.int16) / 128.0 * np.pi / 180.0  # theta
+        data_to_save[:, 8] = txt_data[:, 0].astype(
+            np.int16) * 0.016 * np.pi / 180.0  # phi
+
+        radius = txt_data[:, 2] * kRangeResolution
+        t = radius * np.cos(data_to_save[:, 7])
+
+        data_to_save[:, 0] = t * np.sin(data_to_save[:, 8])  # x
+        data_to_save[:, 1] = t * np.cos(data_to_save[:, 8])  # y
+        data_to_save[:, 2] = radius * np.sin(data_to_save[:, 7])  # z
+        data_to_save[:, 3] = txt_data[:, 5]  # row
+        data_to_save[:, 4] = txt_data[:, 6]  # col
+        data_to_save[:, 5] = txt_data[:, 3].astype(np.int32)  # pluse
+        data_to_save[:, 6] = txt_data[:, 4].astype(np.int32) - 1  # echo
+        data_to_save[:, 9] = id
+
+        # save original data
+        np.savetxt(os.path.join(origin_dir, os.path.basename(filename)), data_to_save)
+
+        # save hdf5 image
+        start_time = time.time()
+        save_as_hdf5(data_to_save, os.path.join(hdf5_dir, "{}.hdf5".format(id)))
+        end_time = time.time()
+        print("ID: {}, Time: {}".format(id, end_time - start_time))
+
+
+def show_test_result():
+    origin = "rayz/t8/origin"
+    dir = "result"
+    filelist = os.listdir(dir)
+    
+    account = len(filelist)
+
+    for filename in filelist:
+        id = int(filename.split(".")[0])
+        filename = os.path.join(dir, filename)
+        
+        res = np.load(filename)
+
+        origin_pcd_name = os.path.join(origin, "{}.txt".format(id))
+
+        frame_array = np.loadtxt(origin_pcd_name).reshape(-1, 10)
+
+        for j in range(frame_array.shape[0]):
+            tlabel = res[int(frame_array[j, 3]), int(frame_array[j, 4])]
+            tflag = 2**int(frame_array[j, 6]) & int(tlabel)
+            frame_array[j, -1] = tflag
+
+        np.savetxt("rayz/res/{}.txt".format(id), frame_array)
+        account -= 1
+        print ("Remaining: {}".format(account))
+
+
+def debug_pred():
+    pre_data = np.load("result/1560.npy")
+
+    # data = np.load("rayz/test_predictions.npy")
+    # res = data[0, :, :]
+
+    good_pred = np.load("rayz/8/test_predictions.npy")
+    good_label = good_pred[130, :, :]
+
+    # use color_map to show the label
+    predict_to_show = np.zeros((128, 1200, 3), dtype=np.uint8)
+    # label_to_show = np.zeros((128, 1200, 3), dtype=np.uint8)
+    good_label_to_show = np.zeros((128, 1200, 3), dtype=np.uint8)
+    for i in range(128):
+        for j in range(1200):
+            predict_to_show[i, j] = color_map[pre_data[i, j]]
+            # label_to_show[i, j] = color_map[res[i, j]]
+            good_label_to_show[i, j] = color_map[good_label[i, j]]
+    cv2.imshow("predict", predict_to_show)
+    # cv2.imshow("label", label_to_show)
+    cv2.imshow("good_label", good_label_to_show)
+    cv2.waitKey(0)
+
+
+# def debug_hdf5():
+#     lhv_filename = "rayz/8/selected/train/1440.hdf5"
+#     rhv_filename = "rayz/t8/test/1441.hdf5"
+
+# process()
 show_test_result()
+# debug_pred()

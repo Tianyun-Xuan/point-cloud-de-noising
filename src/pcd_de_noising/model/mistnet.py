@@ -22,9 +22,9 @@ class MistNet(pl.LightningModule):
 
         # Initialize metrics with the appropriate task
         self.accuracy = Accuracy(num_classes=num_classes,
-                                 average='macro', task='multiclass')
+                                 average='weighted', task='multiclass')
         self.average_precision = AveragePrecision(
-            num_classes=num_classes, task='multiclass')
+            num_classes=num_classes, average='weighted', task='multiclass')
 
         self.save_hyperparameters()  # Save hyperparameters
 
@@ -80,11 +80,17 @@ class MistNet(pl.LightningModule):
 
     def test_step(self, batch, batch_idx):
         loss, logits, labels = self.shared_step(batch)
+
+        # ap
+        print("Logits max:", logits.max().item(), "Logits min:", logits.min().item())
+        probabilities = F.softmax(logits, dim=1)
+        probabilities = torch.clamp(probabilities, min=1e-6, max=1-1e-6)  # 避免0或1的概率
+
         # Log test metrics
         acc = self.accuracy(logits, labels)
-        ap = self.average_precision(logits, labels)
-        self.log("test_acc", acc, on_step=False, on_epoch=True)
-        self.log("test_ap", ap, on_step=False, on_epoch=True)
+        ap = self.average_precision(probabilities, labels)
+        self.log("test_acc", acc, on_step=True, on_epoch=True)
+        self.log("test_ap", ap, on_step=True, on_epoch=True)
 
         # 将需要的结果添加到列表中
         predictions = torch.argmax(logits, dim=1)
