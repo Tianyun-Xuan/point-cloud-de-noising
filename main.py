@@ -46,96 +46,6 @@ def generate_hdf5_file(filename):
         hdf5.create_dataset('labels_1', data=points[:, 5])
 
 
-# def generate_marker_points():
-
-#     def get_useful_data():
-#         background = np.loadtxt("rayz/txt/total/back.txt").reshape(-1, 9)
-#         target = np.loadtxt("rayz/txt/total/target.txt").reshape(-1, 9)
-
-#         # x y z row col pluse echo theta phi
-#         # 0 1 2  3   4   5   6    7    8
-#         background[:, -1] = 0
-#         target[:, -1] = 1
-#         background[:, -2] = np.linalg.norm(background[:, :3], axis=1)
-#         target[:, -2] = np.linalg.norm(target[:, :3], axis=1)
-
-#         # useful
-#         # x y z distance intensity label
-#         useful_background = background[:, [0, 1, 2, -2, -4, -1]]
-#         useful_target = target[:, [0, 1, 2, -2, -4, -1]]
-
-#         useful_data = np.concatenate((useful_background, useful_target), axis=0)
-
-#         return useful_data.astype(np.float32)
-
-#     useful_data = get_useful_data()
-#     useful_data = useful_data.reshape(-1, 6)
-
-#     # 打乱点的顺序
-#     np.random.shuffle(useful_data)
-#     # 每次取出 32 x 400 个点 的 6个参数
-#     total_num = useful_data.shape[0] // (32*400)
-#     for i in range(total_num):
-#         points = useful_data[i*32*400:(i+1)*32*400]
-#         with h5py.File("rayz/train/point_{}.hdf5".format(i), "w", driver='core') as hdf5:
-#             hdf5.create_dataset('sensorX_1', data=points[:, 0].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('sensorY_1', data=points[:, 1].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('sensorZ_1', data=points[:, 2].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('distance_m_1', data=points[:, 3].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('intensity_1', data=points[:, 4].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('labels_1', data=points[:, 5].reshape(
-#                 32, 400), dtype=np.float32)
-
-
-# def frame_to_show():
-#     back = np.loadtxt("rayz/frame/back.txt").reshape(-1, 10)
-#     target = np.loadtxt("rayz/frame/target.txt").reshape(-1, 10)
-#     # x y z row col pluse echo theta phi frame_id
-#     # 0 1 2  3   4   5   6    7    8     9
-
-#     # x y z distance intensity label frame_id
-#     back[:, -2] = 0
-#     target[:, -2] = 1
-#     back[:, -3] = np.linalg.norm(back[:, :3], axis=1)
-#     target[:, -3] = np.linalg.norm(target[:, :3], axis=1)
-
-#     useful_data = np.concatenate((back, target), axis=0)
-#     useful_data = useful_data[:, [0, 1, 2, -3, -4, -2, -1]]
-
-#     # 打乱点的顺序
-#     np.random.shuffle(useful_data)
-#     # 每次取出 32 x 400 个点 的 6个参数
-#     total_num = useful_data.shape[0] // (32*400)
-#     for i in range(total_num):
-#         points = useful_data[i*32*400:(i+1)*32*400]
-#         with h5py.File("rayz/test/point_{}.hdf5".format(i), "w", driver='core') as hdf5:
-#             hdf5.create_dataset('sensorX_1', data=points[:, 0].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('sensorY_1', data=points[:, 1].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('sensorZ_1', data=points[:, 2].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('distance_m_1', data=points[:, 3].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('intensity_1', data=points[:, 4].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('labels_1', data=points[:, 5].reshape(
-#                 32, 400), dtype=np.float32)
-#             hdf5.create_dataset('frame_id', data=points[:, 6].reshape(
-#                 32, 400), dtype=np.float32)
-
-# generate_marker_points()
-# load_hdf5_file("data/train/LidarImage_000000005.hdf5", "point_5.txt")
-# load_hdf5_file("data/train/LidarImage_000000003.hdf5", "point_3.txt")
-# load_hdf5_file("data/train/LidarImage_000000006.hdf5", "point_6.txt")
-# frame_to_show()
-
-
 # For CNN model
 pixel_row = 128
 pixel_col = 1024
@@ -167,8 +77,8 @@ def remove_stra_light(frame, distance):
 
 def from_pcd_to_image():
     # X Y Z row col pluse echo theta phi Original_cloud_index
-    mist_array = np.loadtxt("rayz/300_t.txt").reshape(-1, 10)
-    back_array = np.loadtxt("rayz/300_b.txt").reshape(-1, 10)
+    mist_array = np.loadtxt("data/300_t.txt").reshape(-1, 10)
+    back_array = np.loadtxt("data/300_b.txt").reshape(-1, 10)
 
     origin_id = 300
     frame_id = np.unique(mist_array[:, -1])
@@ -219,7 +129,7 @@ def from_pcd_to_image():
         cv2.imshow("label", label_to_show)
         cv2.waitKey(0)
 
-        with h5py.File("rayz/train/point_{}.hdf5".format(origin_id + id), "w", driver='core') as hdf5:
+        with h5py.File("data/train/point_{}.hdf5".format(origin_id + id), "w", driver='core') as hdf5:
             hdf5.create_dataset('distance', data=table[0].reshape(
                 pixel_row, pixel_col), dtype=np.float32)
             hdf5.create_dataset('intensity_1', data=table[1].reshape(
@@ -235,7 +145,7 @@ def from_pcd_to_image():
         # if debug_array[:, 4] != 0 than let debug_array[:, 3] = 100
         debug_array[:, 3] = debug_array[:, 3] * \
             (debug_array[:, 4] == 0) + 100 * (debug_array[:, 4] != 0)
-        np.savetxt("rayz/label/point_{}.txt".format(origin_id + id),
+        np.savetxt("data/label/point_{}.txt".format(origin_id + id),
                    debug_array, delimiter=",")
 
 
@@ -245,8 +155,8 @@ def show_test_result_v1():
     labels = np.load("test_labels.npy")
 
     # X Y Z row col pluse echo theta phi Original_cloud_index
-    mist_array = np.loadtxt("rayz/300_t.txt").reshape(-1, 10)
-    back_array = np.loadtxt("rayz/300_b.txt").reshape(-1, 10)
+    mist_array = np.loadtxt("data/300_t.txt").reshape(-1, 10)
+    back_array = np.loadtxt("data/300_b.txt").reshape(-1, 10)
 
     origin_id = 300
     frame_id = np.unique(mist_array[:, -1])
@@ -269,27 +179,23 @@ def show_test_result_v1():
 
         total[:, -1] = total[:, -1] * (distance < 15) * (total[:, 6] == 0)
 
-        np.savetxt("rayz/res/point_pre_{}.txt".format((int(origin_id) + int(id))),
+        np.savetxt("data/res/point_pre_{}.txt".format((int(origin_id) + int(id))),
                    total)
 
         # total[:, -1] = label_table[row, col]
 
         # total[:, -1] = total[:, -1] * (distance < 15)* (total[:, 6] == 0)
 
-        # np.savetxt("rayz/res/point_label_{}.txt".format((int(origin_id) + int(id))),
+        # np.savetxt("data/res/point_label_{}.txt".format((int(origin_id) + int(id))),
         #            total)
-
-
-# from_pcd_to_image()
-# show_test_result_v1()
 
 
 # for 128*1200 strictly fixed lidar scan pattern
 
 def generate_scan_pattern_image(origin_id):
     # X Y Z row col pluse echo theta phi Original_cloud_index
-    back_array = np.loadtxt("rayz/8/src/{}_b.txt".format(origin_id)).reshape(-1, 10)
-    mist_array = np.loadtxt("rayz/8/src/{}_t.txt".format(origin_id))
+    back_array = np.loadtxt("data/8/src/{}_b.txt".format(origin_id)).reshape(-1, 10)
+    mist_array = np.loadtxt("data/8/src/{}_t.txt".format(origin_id))
 
     if back_array.shape[0] == 0:
         print("No back array")
@@ -313,7 +219,7 @@ def generate_scan_pattern_image(origin_id):
         # total echo -1
         total[:, 6] = total[:, 6] - 1
         total = remove_stra_light(total, 2)
-        np.savetxt("rayz/without_stra_light/{}.txt".format(count_id), total)
+        np.savetxt("data/without_stra_light/{}.txt".format(count_id), total)
 
         image_table = np.zeros((7, 128, 1200))
         # 用3个bit来编码三次回波是否是水雾的情况
@@ -361,7 +267,7 @@ def generate_scan_pattern_image(origin_id):
         # cv2.imshow("label", label_to_show)
         # cv2.waitKey(0)
 
-        with h5py.File("rayz/train/{}.hdf5".format(count_id), "w", driver='core') as hdf5:
+        with h5py.File("data/train/{}.hdf5".format(count_id), "w", driver='core') as hdf5:
             hdf5.create_dataset('distance_1', data=image_table[0].reshape(
                 128, 1200), dtype=np.float32)
             hdf5.create_dataset('intensity_1', data=image_table[1].reshape(
@@ -383,7 +289,7 @@ def generate_scan_pattern_image(origin_id):
             label = image_table[6, int(point[3]), int(point[4])]
             ref = 2**int(point[-1])
             point[-2] = int(label) & int(ref)
-        np.savetxt("rayz/label/{}.txt".format(count_id), debug_array, delimiter=",")
+        np.savetxt("data/label/{}.txt".format(count_id), debug_array, delimiter=",")
 
 
 def verify_hdf5(filename):
@@ -437,7 +343,7 @@ def show_test_result_v2():
         id = np.uint32(i) + np.uint32(origin_id)
         # X Y Z row col pluse echo theta phi Original_cloud_index
         frame_array = np.loadtxt(
-            "rayz/without_stra_light/{}.txt".format(id)).reshape(-1, 10)
+            "data/without_stra_light/{}.txt".format(id)).reshape(-1, 10)
         label_image = predictions[i, :, :]
 
         for j in range(frame_array.shape[0]):
@@ -445,13 +351,7 @@ def show_test_result_v2():
             tflag = 2**int(frame_array[j, 6]) & int(tlabel)
             frame_array[j, -1] = tflag
 
-        np.savetxt("rayz/res/{}.txt".format(id), frame_array)
-
-
-# for i in range(1850, 1860, 10):
-#     generate_scan_pattern_image(i)
-# verify_hdf5("rayz/train/400.hdf5")
-# show_test_result()
+        np.savetxt("data/res/{}.txt".format(id), frame_array)
 
 
 def save_as_hdf5(total, save_name):
@@ -526,8 +426,8 @@ def process():
     # txt -> hdf5
 
     dir = "/Users/xavier/Documents/calibration/data/txt/shuiwu_8"
-    hdf5_dir = "rayz/test"
-    origin_dir = "rayz/origin"
+    hdf5_dir = "data/test"
+    origin_dir = "data/origin"
     # h_angle, v_angle, range, pluse, echo, row, col
     kRangeResolution = 0.008
 
@@ -575,16 +475,16 @@ def process():
 
 
 def show_test_result():
-    origin = "rayz/t8/origin"
+    origin = "data/t8/origin"
     dir = "result"
     filelist = os.listdir(dir)
-    
+
     account = len(filelist)
 
     for filename in filelist:
         id = int(filename.split(".")[0])
         filename = os.path.join(dir, filename)
-        
+
         res = np.load(filename)
 
         origin_pcd_name = os.path.join(origin, "{}.txt".format(id))
@@ -596,18 +496,18 @@ def show_test_result():
             tflag = 2**int(frame_array[j, 6]) & int(tlabel)
             frame_array[j, -1] = tflag
 
-        np.savetxt("rayz/res/{}.txt".format(id), frame_array)
+        np.savetxt("data/res/{}.txt".format(id), frame_array)
         account -= 1
-        print ("Remaining: {}".format(account))
+        print("Remaining: {}".format(account))
 
 
 def debug_pred():
     pre_data = np.load("result/1560.npy")
 
-    # data = np.load("rayz/test_predictions.npy")
+    # data = np.load("data/test_predictions.npy")
     # res = data[0, :, :]
 
-    good_pred = np.load("rayz/8/test_predictions.npy")
+    good_pred = np.load("data/8/test_predictions.npy")
     good_label = good_pred[130, :, :]
 
     # use color_map to show the label
@@ -625,10 +525,6 @@ def debug_pred():
     cv2.waitKey(0)
 
 
-# def debug_hdf5():
-#     lhv_filename = "rayz/8/selected/train/1440.hdf5"
-#     rhv_filename = "rayz/t8/test/1441.hdf5"
-
 # process()
-show_test_result()
+# show_test_result()
 # debug_pred()
