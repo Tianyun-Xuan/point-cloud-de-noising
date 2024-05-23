@@ -1,8 +1,10 @@
+from tqdm import tqdm
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchmetrics import Accuracy, AveragePrecision
 from lilanet import LiLaBlock  # 确保这个相对导入在你的项目结构中是有效的
+from dataset import create_dataloader  # 导入数据集代码
 import numpy as np
 
 
@@ -17,7 +19,6 @@ class MistNet(nn.Module):
         self.lila5 = LiLaBlock(256, 128, modified=True)
         self.classifier = nn.Conv2d(128, num_classes, kernel_size=1)
 
-        # Initialize metrics with the appropriate task
         self.accuracy = Accuracy(num_classes=num_classes,
                                  average='weighted', task='multiclass')
         self.average_precision = AveragePrecision(
@@ -33,7 +34,7 @@ class MistNet(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
 
-        self.test_results = []  # 用于存储测试结果的列表
+        self.test_results = []
 
     def forward(self, x):
         x = self.lila1(x)
@@ -44,11 +45,6 @@ class MistNet(nn.Module):
         x = self.lila5(x)
         x = self.classifier(x)
         return x
-
-    def predict_step(self, batch):
-        logits = self(batch)
-        predictions = torch.argmax(logits, dim=1)
-        return predictions
 
     def shared_step(self, batch):
         data, labels = batch
@@ -92,17 +88,16 @@ class MistNet(nn.Module):
         np.save("test_labels.npy", labels)
         self.test_results = []
 
-    def infer(self, inp):
-        return self(inp)
-
 
 def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
     model.train()
     model.to(device)
+    print("Totally dataset size: ", len(train_loader.dataset))
+    print("Training device: ", device)
     for epoch in range(epochs):
         train_losses = []
         train_accs = []
-        for batch in train_loader:
+        for batch in tqdm(train_loader, desc=f"Epoch {epoch+1}/{epochs} - Training", unit="batch"):
             data, labels = batch
             data, labels = data.to(device), labels.to(device)
             optimizer.zero_grad()
@@ -113,13 +108,14 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
             train_accs.append(acc.item())
         avg_train_loss = np.mean(train_losses)
         avg_train_acc = np.mean(train_accs)
-        print(f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss}, Train Acc: {avg_train_acc}")
+        print(f"Epoch {
+              epoch+1}/{epochs}, Train Loss: {avg_train_loss}, Train Acc: {avg_train_acc}")
 
         model.eval()
         val_losses = []
         val_accs = []
         with torch.no_grad():
-            for batch in val_loader:
+            for batch in tqdm(val_loader, desc=f"Epoch {epoch+1}/{epochs} - Validation", unit="batch"):
                 data, labels = batch
                 data, labels = data.to(device), labels.to(device)
                 loss, acc = model.validation_step((data, labels))
@@ -127,7 +123,13 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
                 val_accs.append(acc.item())
         avg_val_loss = np.mean(val_losses)
         avg_val_acc = np.mean(val_accs)
-        print(f"Epoch {epoch+1}/{epochs}, Val Loss: {avg_val_loss}, Val Acc: {avg_val_acc}")
+        print(
+            f"Epoch {epoch+1}/{epochs}, Val Loss: {avg_val_loss}, Val Acc: {avg_val_acc}")
+
+        # Save checkpoint every epoch
+        checkpoint_path = f"checkpoint_epoch_{epoch+1}.pth"
+        torch.save(model.state_dict(), checkpoint_path)
+        print(f"Checkpoint saved: {checkpoint_path}")
 
 
 def test(model, test_loader, device='cpu'):
@@ -137,7 +139,7 @@ def test(model, test_loader, device='cpu'):
     test_accs = []
     test_aps = []
     with torch.no_grad():
-        for batch in test_loader:
+        for batch in tqdm(test_loader, desc="Testing", unit="batch"):
             data, labels = batch
             data, labels = data.to(device), labels.to(device)
             loss, acc, ap = model.test_step((data, labels))
@@ -147,48 +149,33 @@ def test(model, test_loader, device='cpu'):
     avg_test_loss = np.mean(test_losses)
     avg_test_acc = np.mean(test_accs)
     avg_test_ap = np.mean(test_aps)
-    print(f"Test Loss: {avg_test_loss}, Test Acc: {avg_test_acc}, Test AP: {avg_test_ap}")
+    print(f"Test Loss: {avg_test_loss}, Test Acc: {
+          avg_test_acc}, Test AP: {avg_test_ap}")
     model.on_test_epoch_end()
 
 
 if __name__ == "__main__":
     num_classes, height, width = 2, 128, 1024
-    
-    print(torch.__version__)
-    # 判断是否支持MPS
-    device = "mps" if torch.backends.mps.is_available() else "cpu"
-    print(device)
-
     model = MistNet(num_classes)  # .to('cuda')
-    
+    optimizer = model.configure_optimizers()
+
+    batch_size = 4
+
+    # 创建训练、验证和测试数据加载器
+    train_loader = create_dataloader('data/train', batch_size)
+    val_loader = create_dataloader('data/val', batch_size)
+    test_loader = create_dataloader('data/test', batch_size)
+
+    device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
+
+    # 训练模型
+    train(model, train_loader, val_loader, optimizer, epochs=2, device=device)
+
+    # 测试模型
+    test(model, test_loader, device=device)
+
     # 模型推理测试
-    inp = torch.randn(1, 6, height, width)  # 6通道输入
+    inp = torch.randn(1, 6, height, width).to(device)  # 6通道输入
     out = model(inp)
     assert out.size() == torch.Size([1, num_classes, height, width])
     print("Pass size check.")
-    
-    optimizer = model.configure_optimizers()
-
-    # 构建数据加载器
-    batch_size = 1
-    num_samples = 1
-
-    # 创建随机数据和标签
-    def create_random_loader(num_samples, batch_size):
-        data = torch.randn(num_samples, 6, height, width)  # 6通道输入
-        labels = torch.randint(0, num_classes, (num_samples, height, width))  # 随机标签
-        dataset = torch.utils.data.TensorDataset(data, labels)
-        loader = torch.utils.data.DataLoader(dataset, batch_size=batch_size, shuffle=True)
-        return loader
-
-    train_loader = create_random_loader(num_samples, batch_size)
-    val_loader = create_random_loader(num_samples, batch_size)
-    test_loader = create_random_loader(num_samples, batch_size)
-    
-    print ("Start training...")
-    # 训练模型
-    train(model, train_loader, val_loader, optimizer, epochs=1, device=device)
-    
-    print ("Start testing...")
-    # 测试模型
-    test(model, test_loader, device=device)
