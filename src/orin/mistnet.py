@@ -3,10 +3,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchmetrics import Accuracy, AveragePrecision
-from lilanet import LiLaBlock  # 确保这个相对导入在你的项目结构中是有效的
-from dataset import create_dataloader  # 导入数据集代码
+from lilanet import LiLaBlock 
+from dataset import create_dataloader
 import numpy as np
-
+import torch.quantization
 
 class MistNet(nn.Module):
     def __init__(self, num_classes=8, in_channels=6):
@@ -33,10 +33,16 @@ class MistNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
+        
+        # 量化
+        self.quant = torch.quantization.QuantStub()
+        self.dequant = torch.quantization.DeQuantStub()
 
         self.test_results = []
 
     def forward(self, x):
+        x = self.quant(x)
+
         x = self.lila1(x)
         x = self.lila2(x)
         x = self.lila3(x)
@@ -44,6 +50,8 @@ class MistNet(nn.Module):
         x = self.dropout(x)
         x = self.lila5(x)
         x = self.classifier(x)
+
+        x = self.dequant(x)
         return x
 
     def shared_step(self, batch):
@@ -94,6 +102,11 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
     model.to(device)
     print("Totally dataset size: ", len(train_loader.dataset))
     print("Training device: ", device)
+
+    # quantization
+    model.qconfig = torch.quantization.get_default_qconfig('fbgemm')
+    torch.quantization.prepare(model, inplace=True)
+
     for epoch in range(epochs):
         train_losses = []
         train_accs = []
@@ -108,8 +121,8 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
             train_accs.append(acc.item())
         avg_train_loss = np.mean(train_losses)
         avg_train_acc = np.mean(train_accs)
-        print(f"Epoch {
-              epoch+1}/{epochs}, Train Loss: {avg_train_loss}, Train Acc: {avg_train_acc}")
+        print(
+            f"Epoch {epoch+1}/{epochs}, Train Loss: {avg_train_loss}, Train Acc: {avg_train_acc}")
 
         model.eval()
         val_losses = []
@@ -126,10 +139,14 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
         print(
             f"Epoch {epoch+1}/{epochs}, Val Loss: {avg_val_loss}, Val Acc: {avg_val_acc}")
 
-        # Save checkpoint every epoch
-        checkpoint_path = f"checkpoint_epoch_{epoch+1}.pth"
-        torch.save(model.state_dict(), checkpoint_path)
-        print(f"Checkpoint saved: {checkpoint_path}")
+        # # Save checkpoint every epoch
+        # checkpoint_path = f"checkpoint_epoch_{epoch+1}.pth"
+        # torch.save(model.state_dict(), checkpoint_path)
+        # print(f"Checkpoint saved: {checkpoint_path}")
+    
+    # 量化
+    torch.quantization.convert(model, inplace=True)
+    print ("Model quantized.")
 
 
 def test(model, test_loader, device='cpu'):
@@ -149,8 +166,8 @@ def test(model, test_loader, device='cpu'):
     avg_test_loss = np.mean(test_losses)
     avg_test_acc = np.mean(test_accs)
     avg_test_ap = np.mean(test_aps)
-    print(f"Test Loss: {avg_test_loss}, Test Acc: {
-          avg_test_acc}, Test AP: {avg_test_ap}")
+    print(
+        f"Test Loss: {avg_test_loss}, Test Acc: {avg_test_acc}, Test AP: {avg_test_ap}")
     model.on_test_epoch_end()
 
 
