@@ -55,6 +55,8 @@ MANIFEST
 .conda*/
 
 /data/
+/log/
+*.zip
 *.pth
 *.onnx
 *.trt
