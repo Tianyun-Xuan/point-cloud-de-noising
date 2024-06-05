@@ -7,13 +7,13 @@ import time
 import os
 
 TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-# trt.nptype = {
-#     trt.bool: np.bool_,
-#     trt.int8: np.int8,
-#     trt.int32: np.int32,
-#     trt.float16: np.float16,
-#     trt.float32: np.float32,
-# }
+trt.nptype = {
+    trt.bool: np.bool_,
+    trt.int8: np.int8,
+    trt.int32: np.int32,
+    trt.float16: np.float16,
+    trt.float32: np.float32,
+}
 
 def load_engine(engine_file_path):
     with open(engine_file_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
@@ -28,7 +28,7 @@ def allocate_buffers(engine):
 
     for binding in engine:
         size = trt.volume(engine.get_tensor_shape(binding)) * 1
-        dtype = trt.nptype(engine.get_tensor_dtype(binding))
+        dtype = trt.nptype[engine.get_tensor_dtype(binding)]
         host_mem = cuda.pagelocked_empty(size, dtype)
         device_mem = cuda.mem_alloc(host_mem.nbytes)
         bindings.append(int(device_mem))
@@ -54,7 +54,7 @@ def prepare_input(data):
 
 
 # 替换为你的 TensorRT 引擎文件路径
-engine_file_path = "model/engine.trt"
+engine_file_path = "models/engine.trt"
 engine = load_engine(engine_file_path)
 inputs, outputs, bindings, stream = allocate_buffers(engine)
 context = engine.create_execution_context()
@@ -77,6 +77,4 @@ for file in test_files:
 
     # accuracy = calculate_accuracy(output, label)
 
-    print(f"inference time: {end_time - start_time}, accuracy: {np.count_nonzero(output)}")
-    print(f"output: {output[0][1:5]}")
-    print(f"label: {label[0][1:5]}")
+    print(f"inference time: {end_time - start_time}")
