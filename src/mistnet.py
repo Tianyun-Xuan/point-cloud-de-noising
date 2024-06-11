@@ -3,10 +3,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchmetrics import Accuracy, AveragePrecision
-from lilanet import LiLaBlock, EvenBlock,BasicConv2d
+from lilanet import LiLaBlock, EvenBlock, BasicConv2d
 from dataset import create_dataloader
 import numpy as np
 import torch.quantization
+
 
 class MistNet(nn.Module):
     def __init__(self, num_classes=8, in_channels=6):
@@ -14,8 +15,8 @@ class MistNet(nn.Module):
         self.lila1 = EvenBlock(in_channels, 96, modified=True)
         self.lila2 = EvenBlock(96, 128, modified=True)
         self.lila3 = EvenBlock(128, 256, modified=True)
-        self.lila4 = EvenBlock(256, 256, modified=True)
-        self.dropout = nn.Dropout2d()
+        # self.lila4 = EvenBlock(256, 256, modified=True)
+        # self.dropout = nn.Dropout2d()
         self.lila5 = EvenBlock(256, 128, modified=True)
         self.classifier = nn.Conv2d(128, num_classes, kernel_size=1)
 
@@ -33,25 +34,19 @@ class MistNet(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-        
-        # # 量化
-        # self.quant = torch.quantization.QuantStub()
-        # self.dequant = torch.quantization.DeQuantStub()
 
         self.test_results = []
 
     def forward(self, x):
-        # x = self.quant(x)
 
         x = self.lila1(x)
         x = self.lila2(x)
         x = self.lila3(x)
-        x = self.lila4(x)
-        x = self.dropout(x)
+        # x = self.lila4(x)
+        # x = self.dropout(x)
         x = self.lila5(x)
         x = self.classifier(x)
 
-        # x = self.dequant(x)
         return x
 
     def shared_step(self, batch):
@@ -106,7 +101,7 @@ class MistNet(nn.Module):
 
 def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
     model.eval()
-    fuse_model(model)
+    # fuse_model(model)
     model.train()
     model.to(device)
     print("Totally dataset size: ", len(train_loader.dataset))
@@ -152,12 +147,11 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
         # checkpoint_path = f"checkpoint_epoch_{epoch+1}.pth"
         # torch.save(model.state_dict(), checkpoint_path)
         # print(f"Checkpoint saved: {checkpoint_path}")
-    
+
     # # 量化
     # model.eval().to("cpu")
     # torch.quantization.convert(model, inplace=True)
-    torch.save(model.state_dict(), 'model_int8.pth')
-    print ("Model quantized.")
+    # torch.save(model.state_dict(), 'model_class4.pth')
 
 
 def test(model, test_loader, device='cpu'):
