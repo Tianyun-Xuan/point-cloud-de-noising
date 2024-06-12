@@ -58,5 +58,5 @@ if __name__ == "__main__":
     train(model, train_loader, val_loader, optimizer, epochs=10, device=device)
 
     # save model
-    torch.save(model.state_dict(), 'model_class4.pth')
+    torch.save(model.state_dict(), 'model_class4_cpu.pth')
     print("Model saved.")
