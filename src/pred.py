@@ -6,14 +6,15 @@ import torch
 import time
 import os
 
+
 TRT_LOGGER = trt.Logger(trt.Logger.WARNING)
-# trt.nptype = {
-#     trt.bool: np.bool_,
-#     trt.int8: np.int8,
-#     trt.int32: np.int32,
-#     trt.float16: np.float16,
-#     trt.float32: np.float32,
-# }
+trt.nptype = {
+    trt.bool: np.bool_,
+    trt.int8: np.int8,
+    trt.int32: np.int32,
+    trt.float16: np.float16,
+    trt.float32: np.float32,
+}
 
 def load_engine(engine_file_path):
     with open(engine_file_path, "rb") as f, trt.Runtime(TRT_LOGGER) as runtime:
@@ -28,7 +29,7 @@ def allocate_buffers(engine):
 
     for binding in engine:
         size = trt.volume(engine.get_tensor_shape(binding)) * 1
-        dtype = trt.nptype(engine.get_tensor_dtype(binding))
+        dtype = trt.nptype[engine.get_tensor_dtype(binding)]
         host_mem = cuda.pagelocked_empty(size, dtype)
         device_mem = cuda.mem_alloc(host_mem.nbytes)
         bindings.append(int(device_mem))
@@ -54,29 +55,43 @@ def prepare_input(data):
 
 
 # 替换为你的 TensorRT 引擎文件路径
-engine_file_path = "model/engine.trt"
+engine_file_path = "engine.trt"
 engine = load_engine(engine_file_path)
 inputs, outputs, bindings, stream = allocate_buffers(engine)
 context = engine.create_execution_context()
 
 
 # use test data
-test_dir = "data/5/train/"
+test_dir = "data/train/"
 test_files = os.listdir(test_dir)
 
 for file in test_files:
-    data = np.load(test_dir + file).reshape(7, 128, 1200).astype(np.float32)
+    data = np.load(test_dir + file).reshape(5, 128, 1200).astype(np.float32)
 
-    input_data = torch.tensor(data[:6], dtype=torch.float32)  # 前6个维度作为输入
-    label = torch.tensor(data[6], dtype=torch.long)  # 最后1个维度作为标签
+    input_data = torch.tensor(data[:4,:,:], dtype=torch.float32)  # 前4个维度作为输入
+    label = torch.tensor(data[4,:,:], dtype=torch.long)  # 最后1个维度作为标签
 
     prepare_input(input_data)
     start_time = time.time()
     output = do_inference(context, bindings, inputs, outputs, stream)
     end_time = time.time()
+    # output = np.argmax(np.array(output).reshape(4, 128,1200), axis=0).reshape(128,1200)
 
-    # accuracy = calculate_accuracy(output, label)
+    # for i in range(128):
+    #     for j in range(1200):
+    #         label_flag = label[i][j].item()
+    #         infer_flag = output[i][j].item()
+    #         if label_flag not in bias_dict:
+    #             bias_dict[label_flag] = 
+    #         else:
+    #             bias_dict[label_flag].append(infer_flag)
+    # for key in bias_dict:
+    #     bias_dict[key] = np.unique(bias_dict[key])
 
-    print(f"inference time: {end_time - start_time}, accuracy: {np.count_nonzero(output)}")
-    print(f"output: {output[0][1:5]}")
-    print(f"label: {label[0][1:5]}")
+    count = 0 
+    # for i in range(128):
+    #     for j in range(1200):
+    #         if output[i][j] == label[i][j]:
+    #             count += 1
+
+    print(f"inference time: {end_time - start_time}, accuracy: {count/(128*1200)}")

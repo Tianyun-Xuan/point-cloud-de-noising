@@ -1,6 +1,6 @@
 import os
 import numpy as np
-import cv2
+# import cv2
 
 color_map = {0: (0, 0, 0),  # black
              1: (0, 0, 255),  # blue -> first echo
@@ -11,7 +11,7 @@ color_map = {0: (0, 0, 0),  # black
              6: (0, 255, 255),  # cyan -> second and third echo
              7: (255, 255, 255)}  # white
 
-input_dir = 'data/class8/train'
+input_dir = 'data/class8/5/train'
 output_dir = 'data/train'
 
 file_list = os.listdir(input_dir)

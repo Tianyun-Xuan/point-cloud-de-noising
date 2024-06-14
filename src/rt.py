@@ -27,7 +27,7 @@ def infer_onnx(model_path, test_loader):
 
     for batch in tqdm(test_loader, desc="Testing", unit="batch"):
         data, labels = batch
-        input_data = np.array(data).reshape(1,6,128,1200).astype(np.float32)
+        input_data = np.array(data).reshape(1,4,128,1200).astype(np.float32)
         output_data = np.array(labels).reshape(128,1200).astype(np.float32)
 
         input_name = session.get_inputs()[0].name
@@ -79,13 +79,12 @@ if __name__ == "__main__":
     print(torch.__version__)
     # 判断是否支持MPS
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    device = 'cpu'
     print(device)
 
     # load model
 
-    model = MistNet()
-    model.load_state_dict(torch.load('model/model.pth'))
+    model = MistNet(4,4)
+    model.load_state_dict(torch.load('model_class4_cpu.pth'))
 
     model.eval().to(device)
 
@@ -103,15 +102,15 @@ if __name__ == "__main__":
 
     
 
-    test_loader = create_dataloader('data/6/train', 1)
+    test_loader = create_dataloader('data/train', 1)
     # test(model, test_loader, device=device)
 
-    dummy_input = torch.randn(1, 6, 128, 1200).to(device)
+    dummy_input = torch.randn(1, 4, 128, 1200).to(device)
 
     # onnx model float32
     input_names = ["input"]
     output_names = ["output"]
-    onnx_path = "model/float32.onnx"
+    onnx_path = "lite_float32.onnx"
 
     torch.onnx.export(model, dummy_input, onnx_path, verbose=True,
                       input_names=input_names, output_names=output_names, opset_version = 17)
