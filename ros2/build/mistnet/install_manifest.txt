@@ -1,0 +1,16 @@
+/home/rayz/code/ros2/install/mistnet/lib/mistnet/inference
+/home/rayz/code/ros2/install/mistnet/share/ament_index/resource_index/package_run_dependencies/mistnet
+/home/rayz/code/ros2/install/mistnet/share/ament_index/resource_index/parent_prefix_path/mistnet
+/home/rayz/code/ros2/install/mistnet/share/mistnet/environment/ament_prefix_path.sh
+/home/rayz/code/ros2/install/mistnet/share/mistnet/environment/ament_prefix_path.dsv
+/home/rayz/code/ros2/install/mistnet/share/mistnet/environment/path.sh
+/home/rayz/code/ros2/install/mistnet/share/mistnet/environment/path.dsv
+/home/rayz/code/ros2/install/mistnet/share/mistnet/local_setup.bash
+/home/rayz/code/ros2/install/mistnet/share/mistnet/local_setup.sh
+/home/rayz/code/ros2/install/mistnet/share/mistnet/local_setup.zsh
+/home/rayz/code/ros2/install/mistnet/share/mistnet/local_setup.dsv
+/home/rayz/code/ros2/install/mistnet/share/mistnet/package.dsv
+/home/rayz/code/ros2/install/mistnet/share/ament_index/resource_index/packages/mistnet
+/home/rayz/code/ros2/install/mistnet/share/mistnet/cmake/mistnetConfig.cmake
+/home/rayz/code/ros2/install/mistnet/share/mistnet/cmake/mistnetConfig-version.cmake
+/home/rayz/code/ros2/install/mistnet/share/mistnet/package.xml

@@ -1,0 +1,4 @@
+source;share/mistnet/local_setup.bash
+source;share/mistnet/local_setup.dsv
+source;share/mistnet/local_setup.sh
+source;share/mistnet/local_setup.zsh
