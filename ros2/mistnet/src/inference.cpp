@@ -1,6 +1,5 @@
 #include <../include/mistnet/inference.h>
 
-#include <chrono>
 // Constructor
 Inference::Inference(const std::string &engineFile) {
   // Load the TensorRT engine
@@ -126,32 +125,4 @@ void Inference::printModelInfo() {
     }
     std::cout << std::endl;
   }
-}
-
-int main() {
-  std::string engineFile =
-      "/home/rayz/code/engine.trt";  // Your TensorRT engine file
-
-  Inference inference(engineFile);
-
-  std::vector<float> input(1 * 4 * 128 * 1200, 1.0f);
-  std::vector<float> output(1 * 4 * 128 * 1200);
-
-  inference.printModelInfo();
-
-  for (int i = 0; i < 10; ++i) {
-    auto start = std::chrono::high_resolution_clock::now();
-    if (inference.infer(input, output) !=0 ) {
-      std::cerr << "Inference failed" << std::endl;
-      return -1;
-    }
-    auto end = std::chrono::high_resolution_clock::now();
-    std::cout << "Inference time: "
-              << std::chrono::duration_cast<std::chrono::milliseconds>(end -
-                                                                       start)
-                     .count()
-              << " ms" << std::endl;
-  }
-
-  return 0;
 }

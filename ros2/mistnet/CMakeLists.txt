@@ -21,7 +21,7 @@ link_directories(/usr/lib/aarch64-linux-gnu)
 link_directories(/usr/local/cuda/lib64)
 link_directories(/usr/local/cuda/compat/libnvcudla)
 
-add_executable(inference src/inference.cpp)
+add_executable(inference src/inference.cpp src/main.cpp)
 ament_target_dependencies(inference rclcpp std_msgs)
 target_link_libraries(inference nvinfer nvonnxparser nvinfer_plugin cudart)
 
