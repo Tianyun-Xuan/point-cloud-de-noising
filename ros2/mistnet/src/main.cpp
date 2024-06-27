@@ -3,9 +3,10 @@
 #include <chrono>
 #include <filesystem>
 
-void argmax(const std::vector<float> &output, std::vector<float> &result) {
+void argmax(const std::vector<float> &output, std::vector<int> &result) {
   // 4 * 128 * 1200 argmax dim=0 -> 128 * 1200
   result.resize(128 * 1200);
+  std::vector<float> result_float(128 * 1200);
 
   for (int i = 0; i < 128 * 1200; i++) {
     int max_idx = 0;
@@ -16,24 +17,22 @@ void argmax(const std::vector<float> &output, std::vector<float> &result) {
         max_idx = j;
       }
     }
-    result[i] = max_idx;
+    result_float[i] = max_idx;
   }
+
+  // convert float to int
+  result.assign(result_float.begin(), result_float.end());
 }
 
-float accuracy(const std::vector<float> &result,
-               const std::vector<float> &label) {
-  // convert float to int
-  std::vector<int> result_int(result.begin(), result.end());
-  std::vector<int> label_int(label.begin(), label.end());
-
+float accuracy(const std::vector<int> &result, const std::vector<int> &label) {
   int correct = 0;
-  for (int i = 0; i < result_int.size(); i++) {
-    if (result_int[i] == label_int[i]) {
+  for (int i = 0; i < result.size(); i++) {
+    if (result[i] == label[i]) {
       correct++;
     }
   }
 
-  return static_cast<float>(correct) / result_int.size();
+  return static_cast<float>(correct) / result.size();
 }
 
 int load_txt_input(const std::string &input_file, std::vector<float> &input,
@@ -78,7 +77,7 @@ void local_test(const std::string &engineFile, const std::string &val_dir) {
   std::vector<float> input(1 * 4 * 128 * 1200, 1.0f);
   std::vector<float> output(1 * 4 * 128 * 1200);
   std::vector<float> label(1 * 4 * 128 * 1200);
-  std::vector<float> result(1 * 128 * 1200);
+  std::vector<int> result(1 * 128 * 1200);
 
   const auto &test_size = valfiles.size();
 
@@ -102,17 +101,21 @@ void local_test(const std::string &engineFile, const std::string &val_dir) {
                                                                        start)
                      .count()
               << " ms" << std::endl;
-    list_accuracy[i] = accuracy(result, label);
+
+    // convert float to int
+    std::vector<int> label_int(label.begin(), label.end());
+    list_accuracy[i] = accuracy(result, label_int);
     std::cout << "Accuracy: " << list_accuracy[i] << std::endl;
   }
 }
 
-int main(int argc, char **argv) {
-  const std::string engineFile =
-      argc == 3 ? argv[1] : "/home/rayz/code/engine.trt";
-  const std::string val_dir = argc == 3 ? argv[2] : "/home/rayz/code/data/c/";
+// int main(int argc, char **argv) {
+//   const std::string engineFile =
+//       argc == 3 ? argv[1] : "/home/rayz/code/engine.trt";
+//   const std::string val_dir = argc == 3 ? argv[2] :
+//   "/home/rayz/code/data/c/";
 
-  local_test(engineFile, val_dir);
+//   local_test(engineFile, val_dir);
 
-  return 0;
-}
+//   return 0;
+// }

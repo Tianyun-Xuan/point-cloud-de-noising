@@ -54,6 +54,6 @@ void local_test(const std::string& engineFile, const std::string& val_dir);
 int load_txt_input(const std::string& input_file, std::vector<float>& input,
                    std::vector<float>& label);
 
-void argmax(const std::vector<float>& output, std::vector<float>& result);
-float accuracy(const std::vector<float>& output,
-               const std::vector<float>& label);
+void argmax(const std::vector<float>& output, std::vector<int>& result);
+float accuracy(const std::vector<int>& output,
+               const std::vector<int>& label);

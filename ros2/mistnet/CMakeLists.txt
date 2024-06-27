@@ -15,15 +15,19 @@ include_directories(/usr/include/aarch64-linux-gnu)
 include_directories(/usr/local/cuda/include)
 include_directories(/usr/src/tensorrt/include)
 include_directories(include)
+include_directories(inc)
 
 # Include TensorRT libraries
 link_directories(/usr/lib/aarch64-linux-gnu)
 link_directories(/usr/local/cuda/lib64)
 link_directories(/usr/local/cuda/compat/libnvcudla)
+link_directories(lib/static)
 
-add_executable(inference src/inference.cpp src/main.cpp)
-ament_target_dependencies(inference rclcpp std_msgs)
-target_link_libraries(inference nvinfer nvonnxparser nvinfer_plugin cudart)
+add_executable(mistnode src/inference.cpp 
+                        src/main.cpp
+                        src/mistnode.cpp)
+ament_target_dependencies(mistnode rclcpp std_msgs)
+target_link_libraries(mistnode nvinfer nvonnxparser nvinfer_plugin cudart rayz_lidar stdc++fs pthread dl)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)
@@ -37,10 +41,13 @@ if(BUILD_TESTING)
   ament_lint_auto_find_test_dependencies()
 endif()
 
-install (TARGETS inference
+install (TARGETS mistnode
   DESTINATION lib/${PROJECT_NAME})
 
 install (DIRECTORY include/
   DESTINATION include)
+
+install (DIRECTORY inc/
+DESTINATION inc)
 
 ament_package()
