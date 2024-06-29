@@ -143,10 +143,10 @@ def train(model, train_loader, val_loader, optimizer, epochs=10, device='cpu'):
         print(
             f"Epoch {epoch+1}/{epochs}, Val Loss: {avg_val_loss}, Val Acc: {avg_val_acc}")
 
-        # # Save checkpoint every epoch
-        # checkpoint_path = f"checkpoint_epoch_{epoch+1}.pth"
-        # torch.save(model.state_dict(), checkpoint_path)
-        # print(f"Checkpoint saved: {checkpoint_path}")
+        # Save checkpoint every epoch
+        checkpoint_path = f"checkpoint_epoch_{epoch+1}.pth"
+        torch.save(model.state_dict(), checkpoint_path)
+        print(f"Checkpoint saved: {checkpoint_path}")
 
     # # 量化
     # model.eval().to("cpu")

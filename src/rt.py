@@ -84,7 +84,7 @@ if __name__ == "__main__":
     # load model
 
     model = MistNet(4,4)
-    model.load_state_dict(torch.load('model_class4_cpu.pth'))
+    model.load_state_dict(torch.load('model.pth'))
 
     model.eval().to(device)
 
@@ -110,7 +110,7 @@ if __name__ == "__main__":
     # onnx model float32
     input_names = ["input"]
     output_names = ["output"]
-    onnx_path = "lite_float32.onnx"
+    onnx_path = "model.onnx"
 
     torch.onnx.export(model, dummy_input, onnx_path, verbose=True,
                       input_names=input_names, output_names=output_names, opset_version = 17)
