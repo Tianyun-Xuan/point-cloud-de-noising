@@ -194,7 +194,8 @@ def show_test_result_v1():
 
 def generate_scan_pattern_image(origin_id):
     # X Y Z row col pluse echo theta phi Original_cloud_index
-    back_array = np.loadtxt("data/8/src/{}_b.txt".format(origin_id)).reshape(-1, 10)
+    back_array = np.loadtxt(
+        "data/8/src/{}_b.txt".format(origin_id)).reshape(-1, 10)
     mist_array = np.loadtxt("data/8/src/{}_t.txt".format(origin_id))
 
     if back_array.shape[0] == 0:
@@ -232,17 +233,20 @@ def generate_scan_pattern_image(origin_id):
                     third_echo = points[points[:, 6] == 2]
                     label = 0
                     if first_echo.shape[0] != 0:
-                        image_table[0, i, j] = np.linalg.norm(first_echo[0, :3])
+                        image_table[0, i, j] = np.linalg.norm(
+                            first_echo[0, :3])
                         image_table[1, i, j] = first_echo[0, 4]
                         if first_echo[0, -1] == 101:
                             label = label | 1
                     if second_echo.shape[0] != 0:
-                        image_table[2, i, j] = np.linalg.norm(second_echo[0, :3])
+                        image_table[2, i, j] = np.linalg.norm(
+                            second_echo[0, :3])
                         image_table[3, i, j] = second_echo[0, 4]
                         if second_echo[0, -1] == 101:
                             label = label | 2
                     if third_echo.shape[0] != 0:
-                        image_table[4, i, j] = np.linalg.norm(third_echo[0, :3])
+                        image_table[4, i, j] = np.linalg.norm(
+                            third_echo[0, :3])
                         image_table[5, i, j] = third_echo[0, 4]
                         if third_echo[0, -1] == 101:
                             label = label | 4
@@ -289,7 +293,8 @@ def generate_scan_pattern_image(origin_id):
             label = image_table[6, int(point[3]), int(point[4])]
             ref = 2**int(point[-1])
             point[-2] = int(label) & int(ref)
-        np.savetxt("data/label/{}.txt".format(count_id), debug_array, delimiter=",")
+        np.savetxt("data/label/{}.txt".format(count_id),
+                   debug_array, delimiter=",")
 
 
 def verify_hdf5(filename):
@@ -347,7 +352,8 @@ def show_test_result_v2():
         label_image = predictions[i, :, :]
 
         for j in range(frame_array.shape[0]):
-            tlabel = label_image[int(frame_array[j, 3]), int(frame_array[j, 4])]
+            tlabel = label_image[int(frame_array[j, 3]),
+                                 int(frame_array[j, 4])]
             tflag = 2**int(frame_array[j, 6]) & int(tlabel)
             frame_array[j, -1] = tflag
 
@@ -465,11 +471,13 @@ def process():
         data_to_save[:, 9] = id
 
         # save original data
-        np.savetxt(os.path.join(origin_dir, os.path.basename(filename)), data_to_save)
+        np.savetxt(os.path.join(
+            origin_dir, os.path.basename(filename)), data_to_save)
 
         # save hdf5 image
         start_time = time.time()
-        save_as_hdf5(data_to_save, os.path.join(hdf5_dir, "{}.hdf5".format(id)))
+        save_as_hdf5(data_to_save, os.path.join(
+            hdf5_dir, "{}.hdf5".format(id)))
         end_time = time.time()
         print("ID: {}, Time: {}".format(id, end_time - start_time))
 
@@ -525,6 +533,95 @@ def debug_pred():
     cv2.waitKey(0)
 
 
-# process()
-# show_test_result()
-# debug_pred()
+def orin_data():
+    # load mist mark data and background mark data
+    # x y z range pluse row col index echo orinal_index
+
+    filenames = os.listdir("data/8/mark/back")
+    # only deal with file end with ".txt"
+    fileids = [int(file.split(".")[0])
+               for file in filenames if file.endswith(".txt")]
+
+    for groupe in fileids:
+        print("Processing: {}".format(groupe))
+        backfilename = os.path.join(
+            "data/8/mark/back", "{}.txt".format(groupe))
+        mistfilename = os.path.join(
+            "data/8/mark/mist", "{}.txt".format(groupe))
+        mist = np.array([]).reshape(-1, 10)
+        back = np.array([]).reshape(-1, 10)
+        if os.path.exists(backfilename):
+            back = np.loadtxt(
+                "data/8/mark/back/{}.txt".format(groupe)).reshape(-1, 10)
+        if os.path.exists(mistfilename):
+            mist = np.loadtxt(
+                "data/8/mark/mist/{}.txt".format(groupe)).reshape(-1, 10)
+
+        # union of unique of mist and unique of back
+        ids = np.unique(np.concatenate((mist[:, -1], back[:, -1])))
+
+        for id in ids:
+            mist_id = mist[mist[:, -1] == id]
+            back_id = back[back[:, -1] == id]
+
+            # mist mark as 1
+            mist_id[:, -1] = 1
+            back_id[:, -1] = 0
+
+            total = np.concatenate((mist_id, back_id), axis=0)
+
+            real_id = groupe + int(id)
+            # check if file exists
+            save_filename = "data/8/label/{}.txt".format(real_id)
+            if os.path.exists(save_filename):
+                print("File exists: {}".format(real_id))
+                continue
+            np.savetxt(save_filename, total)
+
+
+def orin_npy():
+    files = os.listdir("data/8/label")
+    for file in files:
+        id = int(file.split(".")[0])
+        # x y z range pluse row col index echo label
+        data = np.loadtxt("data/8/label/{}".format(file)).reshape(-1, 10)
+
+        # create depth_map
+
+        first_echo_distance = np.zeros((128, 1200))
+        first_echo_pluse = np.zeros((128, 1200))
+        second_echo_distance = np.zeros((128, 1200))
+        second_echo_pluse = np.zeros((128, 1200))
+        label = np.zeros((128, 1200))
+
+        for i in range(data.shape[0]):
+            row = int(data[i, 5])
+            col = int(data[i, 6])
+            if data[i, 8] == 2:
+                first_echo_distance[row, col] = data[i, 3]
+                first_echo_pluse[row, col] = data[i, 4]
+                if data[i, 9] == 1:
+                    label[row, col] = int(label[row, col]) | 1
+            if data[i, 8] == 1:
+                second_echo_distance[row, col] = data[i, 3]
+                second_echo_pluse[row, col] = data[i, 4]
+                if data[i, 9] == 1:
+                    label[row, col] = int(label[row, col]) | 2
+
+        # cv2.imshow("first_echo_distance", first_echo_distance)
+        # cv2.imshow("first_echo_pluse", first_echo_pluse)
+        # cv2.imshow("second_echo_distance", second_echo_distance)
+        # cv2.imshow("second_echo_pluse", second_echo_pluse)
+        # cv2.imshow("label", label)
+
+        # cv2.waitKey()
+
+        # result as 5 * 128 * 1200
+        result = np.stack((first_echo_distance, first_echo_pluse,
+                           second_echo_distance, second_echo_pluse, label), axis=0)
+        print(result.shape)
+        np.save("data/8/npy/{}.npy".format(id), result)
+
+
+orin_data()
+orin_npy()
