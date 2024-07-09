@@ -12,11 +12,11 @@ class MistNode : public rclcpp::Node {
  private:
   static int data_callback_wrapper(int handle, RayzLidarPacket* frame,
                                    void* context) {
-    // return (reinterpret_cast<MistNode*>(context))
-    //     ->data_callback(handle, frame, context);
-
     return (reinterpret_cast<MistNode*>(context))
-        ->savetxt_callback(handle, frame, context);
+        ->data_callback(handle, frame, context);
+
+    // return (reinterpret_cast<MistNode*>(context))
+    //     ->savetxt_callback(handle, frame, context);
   }
 
   int savetxt_callback(int handle, RayzLidarPacket* frame, void* context) {
@@ -110,7 +110,7 @@ class MistNode : public rclcpp::Node {
             if (point.range != 0) {
               int pixel_index =
                   short(point.vline) * 1200 + short(point.ts_10usec);
-              int flag = std::pow(2, 2 - j);
+              int flag = j == 2 ? 1 : 2;
 
               if ((result_[pixel_index] & flag) != 0) {
                 // memcpy(&fresh_frame->content[point_count], &point,
@@ -154,10 +154,10 @@ class MistNode : public rclcpp::Node {
 
     // rayz config
     rayz_lidar_set_log_level("debug");
-    int lidar_handle = rayz_lidar_open("/home/rayz/code/data/8.pcap", "m2w");
+    int lidar_handle = rayz_lidar_open("/home/rayz/code/data/5.pcap", "m2w");
 
     if (lidar_handle >= 0) {
-      // rayz_lidar_set_config(lidar_handle, "rewind", "-1", (char*)"int");
+      rayz_lidar_set_config(lidar_handle, "rewind", "-1", (char*)"int");
       rayz_lidar_set_callback(lidar_handle, data_callback_wrapper, this);
       rayz_lidar_start(lidar_handle);
       rayz_lidar_add_stream(lidar_handle, "ws://192.168.0.3:2368");
@@ -165,7 +165,7 @@ class MistNode : public rclcpp::Node {
   }
 
  private:
-  Inference engine_ = Inference("/home/rayz/code/engine.trt");
+  Inference engine_ = Inference("/home/rayz/code/models/0703/engine.trt");
   // 4 input channel * 128 height * 1200 width
   // distance pluse distance pluse
   std::vector<float> input_ = std::vector<float>(1 * 4 * 128 * 1200, 0.f);

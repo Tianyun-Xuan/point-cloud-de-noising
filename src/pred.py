@@ -55,28 +55,33 @@ def prepare_input(data):
 
 
 # 替换为你的 TensorRT 引擎文件路径
-engine_file_path = "engine.trt"
+engine_file_path = "/home/mist/models/0703/engine.trt"
 engine = load_engine(engine_file_path)
 inputs, outputs, bindings, stream = allocate_buffers(engine)
 context = engine.create_execution_context()
 
 
 # use test data
-test_dir = "data/train/"
+test_dir = "data/verify/"
 test_files = os.listdir(test_dir)
+
+precisions = []
+recalls = []
 
 for file in test_files:
     data = np.load(test_dir + file).reshape(5, 128, 1200).astype(np.float32)
 
     input_data = torch.tensor(data[:4,:,:], dtype=torch.float32)  # 前4个维度作为输入
-    label = torch.tensor(data[4,:,:], dtype=torch.long)  # 最后1个维度作为标签
+    labels = torch.tensor(data[4,:,:], dtype=torch.long)  # 最后1个维度作为标签
 
     prepare_input(input_data)
     start_time = time.time()
     output = do_inference(context, bindings, inputs, outputs, stream)
     end_time = time.time()
-    # output = np.argmax(np.array(output).reshape(4, 128,1200), axis=0).reshape(128,1200)
+    predictions = np.argmax(np.array(output).reshape(1, 4, 128,1200), axis=1).reshape(128,1200)
+    labels = np.array(labels).reshape(128,1200)
 
+    
     # for i in range(128):
     #     for j in range(1200):
     #         label_flag = label[i][j].item()
@@ -88,10 +93,23 @@ for file in test_files:
     # for key in bias_dict:
     #     bias_dict[key] = np.unique(bias_dict[key])
 
-    count = 0 
-    # for i in range(128):
-    #     for j in range(1200):
-    #         if output[i][j] == label[i][j]:
-    #             count += 1
+    
+    # precison and recall
+    precision = np.zeros(4)
+    recall = np.zeros(4)
 
-    print(f"inference time: {end_time - start_time}, accuracy: {count/(128*1200)}")
+    for i in range(4):
+        precision[i] = np.sum(np.logical_and(
+            labels == i, predictions == i)) / np.sum(predictions == i)
+        recall[i] = np.sum(np.logical_and(
+            labels == i, predictions == i)) / np.sum(labels == i)
+    
+    precisions.append(precision)
+    recalls.append(recall)
+
+    print(f"inference time: {end_time - start_time}, precision: {precision}, recall: {recall}")
+
+precisions = np.array(precisions)
+recalls = np.array(recalls)
+print("precision: ", np.mean(precisions, axis=0))
+print("recall: ", np.mean(recalls, axis=0))

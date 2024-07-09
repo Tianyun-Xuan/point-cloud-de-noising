@@ -16,7 +16,7 @@ class MistNet(nn.Module):
         self.lila2 = EvenBlock(96, 128, modified=True)
         self.lila3 = EvenBlock(128, 256, modified=True)
         # self.lila4 = EvenBlock(256, 256, modified=True)
-        # self.dropout = nn.Dropout2d()
+        self.dropout = nn.Dropout2d()
         self.lila5 = EvenBlock(256, 128, modified=True)
         self.classifier = nn.Conv2d(128, num_classes, kernel_size=1)
 
@@ -43,7 +43,7 @@ class MistNet(nn.Module):
         x = self.lila2(x)
         x = self.lila3(x)
         # x = self.lila4(x)
-        # x = self.dropout(x)
+        x = self.dropout(x)
         x = self.lila5(x)
         x = self.classifier(x)
 
