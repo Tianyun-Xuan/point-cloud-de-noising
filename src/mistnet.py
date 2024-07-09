@@ -3,10 +3,9 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torchmetrics import Accuracy, AveragePrecision
-from lilanet import LiLaBlock, EvenBlock, BasicConv2d
+from lilanet import EvenBlock, BasicConv2d
 from dataset import create_dataloader
 import numpy as np
-import torch.quantization
 
 
 class MistNet(nn.Module):
@@ -14,10 +13,8 @@ class MistNet(nn.Module):
         super(MistNet, self).__init__()
         self.lila1 = EvenBlock(in_channels, 96, modified=True)
         self.lila2 = EvenBlock(96, 128, modified=True)
-        self.lila3 = EvenBlock(128, 256, modified=True)
-        # self.lila4 = EvenBlock(256, 256, modified=True)
-        self.dropout = nn.Dropout2d()
-        self.lila5 = EvenBlock(256, 128, modified=True)
+        # self.lila3 = EvenBlock(128, 256, modified=True)
+        # self.lila4 = EvenBlock(256, 128, modified=True)
         self.classifier = nn.Conv2d(128, num_classes, kernel_size=1)
 
         self.accuracy = Accuracy(num_classes=num_classes,
@@ -41,10 +38,8 @@ class MistNet(nn.Module):
 
         x = self.lila1(x)
         x = self.lila2(x)
-        x = self.lila3(x)
+        # x = self.lila3(x)
         # x = self.lila4(x)
-        x = self.dropout(x)
-        x = self.lila5(x)
         x = self.classifier(x)
 
         return x
