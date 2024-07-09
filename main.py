@@ -623,5 +623,5 @@ def orin_npy():
         np.save("data/8/npy/{}.npy".format(id), result)
 
 
-orin_data()
-orin_npy()
+# orin_data()
+# orin_npy()

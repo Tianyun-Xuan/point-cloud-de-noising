@@ -27,7 +27,7 @@ for j in range(len(logs)):
     for i in range(epochs):
         train_log = log[2 * i]
         val_log = log[2 * i + 1]
-        
+
         train_loss = train_log.split(",")[1].split(":")[-1]
         train_acc = train_log.split(",")[2].split(":")[-1]
         val_loss = val_log.split(",")[1].split(":")[-1]
@@ -39,18 +39,18 @@ for j in range(len(logs)):
         val_acc_table[j][i] = val_acc
 
 
-# plot loss and acc
+# plot train and val, loss and acc
 plt.figure()
 plt.subplot(2, 1, 1)
 for i in range(len(logs)):
-    plt.plot(range(epochs), train_loss_table[i], label=legend[i])
-plt.xlabel("epochs")
-plt.ylabel("train loss")
+    plt.plot(train_loss_table[i], label=legend[i] + " train loss")
+    plt.plot(val_loss_table[i], label=legend[i] + " val loss")
 plt.legend()
+plt.title("Loss")
 plt.subplot(2, 1, 2)
 for i in range(len(logs)):
-    plt.plot(range(epochs), train_acc_table[i], label=legend[i])
-plt.xlabel("epochs")
-plt.ylabel("train acc")
+    plt.plot(train_acc_table[i], label=legend[i] + " train acc")
+    plt.plot(val_acc_table[i], label=legend[i] + " val acc")
 plt.legend()
+plt.title("Acc")
 plt.show()

@@ -53,3 +53,7 @@ MANIFEST
 # Per-project virtualenvs
 .venv*/
 .conda*/
+
+data/
+*.onnx
+*.pth
