@@ -2,7 +2,7 @@ import numpy as np
 import os
 
 INPUT_SHAPE = (1, 4, 128, 1200)
-DATA_DIR = 'data/5/train/'  # Replace with your directory path
+DATA_DIR = 'data/8/npy/'  # Replace with your directory path
 
 
 def load_data():

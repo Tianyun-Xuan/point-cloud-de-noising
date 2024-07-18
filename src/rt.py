@@ -113,50 +113,50 @@ def build_engine(onnx_file_path, engine_file_path):
 
 
 if __name__ == "__main__":
-    # # # engine = build_engine("model.onnx", "model_fp16.trt")
+    # # engine = build_engine("model.onnx", "model_fp16.trt")
 
-    # # # if engine is not None:
-    # # #     print("Engine was built successfully!")
-    # # # else:
-    # # #     print("Engine was not built successfully!")
+    # # if engine is not None:
+    # #     print("Engine was built successfully!")
+    # # else:
+    # #     print("Engine was not built successfully!")
 
-    # # test environment
-    # print(torch.__version__)
-    # # 判断是否支持MPS
-    # device = 'cuda' if torch.cuda.is_available() else 'cpu'
-    # print(device)
+    # test environment
+    print(torch.__version__)
+    # 判断是否支持MPS
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    print(device)
 
-    # # load model
+    # load model
 
-    # model = MistNet(4,4)
-    # model.load_state_dict(torch.load('models/0704/model.pth'))
+    model = MistNet(4,4)
+    model.load_state_dict(torch.load('model.pth'))
 
-    # model.eval().to(device)
+    model.eval().to(device)
 
-    # # ### tired but seems not work
-    # # # # quantization to int8 using post training dynamic quantization
-    # # # qconfig_spec = {
-    # # #     torch.nn.Linear: torch.quantization.default_dynamic_qconfig,
-    # # #     torch.nn.Conv2d: torch.quantization.default_dynamic_qconfig,
-    # # #     torch.nn.ReLU: torch.quantization.default_dynamic_qconfig,
-    # # #     torch.nn.MaxPool2d: torch.quantization.default_dynamic_qconfig,
-    # # #     torch.nn.BatchNorm2d: torch.quantization.default_dynamic_qconfig,
-    # # #     torch.nn.Dropout: torch.quantization.default_dynamic_qconfig,
-    # # # }
-    # # # model_int8 = quantize_dynamic(model, qconfig_spec, dtype=torch.qint8)
+    # ### tired but seems not work
+    # # # quantization to int8 using post training dynamic quantization
+    # # qconfig_spec = {
+    # #     torch.nn.Linear: torch.quantization.default_dynamic_qconfig,
+    # #     torch.nn.Conv2d: torch.quantization.default_dynamic_qconfig,
+    # #     torch.nn.ReLU: torch.quantization.default_dynamic_qconfig,
+    # #     torch.nn.MaxPool2d: torch.quantization.default_dynamic_qconfig,
+    # #     torch.nn.BatchNorm2d: torch.quantization.default_dynamic_qconfig,
+    # #     torch.nn.Dropout: torch.quantization.default_dynamic_qconfig,
+    # # }
+    # # model_int8 = quantize_dynamic(model, qconfig_spec, dtype=torch.qint8)
 
     test_loader = create_dataloader('data/verify/', 1)
-    # # test(model, test_loader, device=device)
+    # test(model, test_loader, device=device)
 
-    # dummy_input = torch.randn(1, 4, 128, 1200).to(device)
+    dummy_input = torch.randn(1, 4, 128, 1200).to(device)
 
-    # # onnx model float32
-    # input_names = ["input"]
-    # output_names = ["output"]
-    onnx_path = "models/0703/model.onnx"
+    # onnx model float32
+    input_names = ["input"]
+    output_names = ["output"]
+    onnx_path = "model.onnx"
 
-    # torch.onnx.export(model, dummy_input, onnx_path, verbose=True,
-    #                   input_names=input_names, output_names=output_names, opset_version = 17)
+    torch.onnx.export(model, dummy_input, onnx_path, verbose=True,
+                      input_names=input_names, output_names=output_names, opset_version = 17)
 
     infer_onnx(onnx_path, test_loader)
 

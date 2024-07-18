@@ -55,7 +55,7 @@ def prepare_input(data):
 
 
 # 替换为你的 TensorRT 引擎文件路径
-engine_file_path = "/home/mist/models/0703/engine.trt"
+engine_file_path = "/home/mist/engine_int8.trt"
 engine = load_engine(engine_file_path)
 inputs, outputs, bindings, stream = allocate_buffers(engine)
 context = engine.create_execution_context()
