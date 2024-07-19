@@ -55,14 +55,14 @@ def prepare_input(data):
 
 
 # 替换为你的 TensorRT 引擎文件路径
-engine_file_path = "/home/mist/engine_int8.trt"
+engine_file_path = "models/0719/engine.trt"
 engine = load_engine(engine_file_path)
 inputs, outputs, bindings, stream = allocate_buffers(engine)
 context = engine.create_execution_context()
 
 
 # use test data
-test_dir = "data/verify/"
+test_dir = "data/5/train/"
 test_files = os.listdir(test_dir)
 
 precisions = []
@@ -113,3 +113,5 @@ precisions = np.array(precisions)
 recalls = np.array(recalls)
 print("precision: ", np.mean(precisions, axis=0))
 print("recall: ", np.mean(recalls, axis=0))
+print("precision: ", np.mean(np.mean(precisions, axis=0)[:2]))
+print("recall: ", np.mean(np.mean(recalls, axis=0)[:2]))

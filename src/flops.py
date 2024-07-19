@@ -13,7 +13,7 @@ print(device)
 
 
 model = MistNet(4, 4)
-model.load_state_dict(torch.load('/home/workspace/point-cloud-de-noising/model.pth'))
+model.load_state_dict(torch.load('/home/mist/model.pth'))
 
 model.eval().to(device)
 

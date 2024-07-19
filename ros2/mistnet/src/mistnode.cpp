@@ -15,14 +15,14 @@ class MistNode : public rclcpp::Node {
     // return (reinterpret_cast<MistNode*>(context))
     //     ->data_callback_fresh_frame(handle, frame, context);
 
-    // return (reinterpret_cast<MistNode*>(context))
-    //     ->data_callback_mark_frame(handle, frame, context);
+    return (reinterpret_cast<MistNode*>(context))
+        ->data_callback_twice_echo(handle, frame, context);
 
     // return (reinterpret_cast<MistNode*>(context))
     //     ->savetxt_callback(handle, frame, context);
 
-    return (reinterpret_cast<MistNode*>(context))
-        ->data_callback_origin_frame(handle, frame, context);
+    // return (reinterpret_cast<MistNode*>(context))
+    //     ->data_callback_origin_frame(handle, frame, context);
   }
 
   int savetxt_callback(int handle, RayzLidarPacket* frame, void* context) {
@@ -58,6 +58,77 @@ class MistNode : public rclcpp::Node {
       }
     }
     return 0;
+  }
+
+  int data_callback_twice_echo(int handle, RayzLidarPacket* frame,
+                               void* context) {
+    // only process frame type 0 point cloud
+    if (frame->type == 0) {
+      // read RayzCPoint in frame
+      RayzCPoint* points = (RayzCPoint*)frame->content;
+
+      std::fill(input_.begin(), input_.end(), 0.0f);
+      std::fill(output_.begin(), output_.end(), 0.0f);
+      std::fill(result_.begin(), result_.end(), 0);
+
+      // echo
+      if (frame->number % 2 == 0) {
+        int number = frame->number / 2;
+
+        // CPoint -> depth-map
+        for (int i = 0; i < number; i++) {
+          for (int j = 0; j < 2; j++) {
+            int index = i * 2 + j;
+            RayzCPoint point = points[index];
+            if (point.range != 0) {
+              int pixel_index =
+                  short(point.vline) * 1200 + short(point.ts_10usec);
+              int distance_id = j * 2 * 128 * 1200 + pixel_index;
+              int pluse_id = (2 * j + 1) * 128 * 1200 + pixel_index;
+
+              input_[distance_id] = short(point.range);
+              input_[pluse_id] = short(point.pluse);
+            }
+          }
+        }
+
+        // infer
+        if (engine_.infer(input_, output_) != 0) {
+          std::cerr << "Inference failed" << std::endl;
+          return -1;
+        }
+
+        // argmax
+        argmax(output_, result_);
+
+        int point_count = 0;
+        for (int i = 0; i < number; i++) {
+          for (int j = 0; j < 2; j++) {
+            int index = i * 2 + j;
+            RayzCPoint& point = points[index];
+            point.intensity = point.pluse;
+            // point.intensity = 100;
+
+            // if (point.range != 0) {
+            //   int pixel_index =
+            //       short(point.vline) * 1200 + short(point.ts_10usec);
+            //   int flag = j == 0 ? 1 : 2;
+
+            //   if ((result_[pixel_index] & flag) != 0) {
+            //     point.intensity = 255;
+            //     point_count++;
+            //   }
+            // }
+          }
+        }
+
+        // publish
+        rayz_lidar_pub_packet(handle, frame);
+        return 1;
+      }
+    }
+
+    return -1;
   }
 
   int data_callback_mark_frame(int handle, RayzLidarPacket* frame,
@@ -165,6 +236,7 @@ class MistNode : public rclcpp::Node {
           }
         }
 
+        auto infer_start = std::chrono::high_resolution_clock::now();
         // infer
         if (engine_.infer(input_, output_) != 0) {
           std::cerr << "Inference failed" << std::endl;
@@ -173,6 +245,7 @@ class MistNode : public rclcpp::Node {
 
         // argmax
         argmax(output_, result_);
+        auto infer_end = std::chrono::high_resolution_clock::now();
 
         int point_count = 0;
         // recreate fresh frame
@@ -210,12 +283,25 @@ class MistNode : public rclcpp::Node {
         fresh_frame->length = point_count * sizeof(RayzCPoint);
 
         auto end = std::chrono::high_resolution_clock::now();
-        std::cout << "Inference time: "
-                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+        // std::cout << "Totally time: "
+        //           << std::chrono::duration_cast<std::chrono::milliseconds>(
+        //                  end - start)
+        //                  .count()
+        //           << "ms" << " infer time: "
+        //           << std::chrono::duration_cast<std::chrono::milliseconds>(
+        //                  infer_end - infer_start)
+        //                  .count()
+        //           << " filtered points : " << point_count << " / " << number
+        //           << std::endl;
+
+        std::cout << std::chrono::duration_cast<std::chrono::milliseconds>(
                          end - start)
                          .count()
-                  << "ms" << " filtered points : " << point_count << " / "
-                  << number << std::endl;
+                  << " "
+                  << std::chrono::duration_cast<std::chrono::milliseconds>(
+                         infer_end - infer_start)
+                         .count()
+                  << " " << point_count << std::endl;
 
         // publish
         rayz_lidar_pub_packet(handle, fresh_frame);
@@ -262,13 +348,14 @@ class MistNode : public rclcpp::Node {
 
     // rayz config
     rayz_lidar_set_log_level("debug");
-    int lidar_handle = rayz_lidar_open("/home/rayz/code/data/8.pcap", "m2w");
+    // int lidar_handle = rayz_lidar_open("/home/rayz/code/data/8.pcap", "m2w");
+    int lidar_handle = rayz_lidar_open("udp://0.0.0.0:2368", "m2w");
 
     if (lidar_handle >= 0) {
       // rayz_lidar_set_config(lidar_handle, "rewind", "-1", (char*)"int");
       rayz_lidar_set_callback(lidar_handle, data_callback_wrapper, this);
       rayz_lidar_start(lidar_handle);
-      rayz_lidar_add_stream(lidar_handle, "ws://192.168.0.3:2368");
+      rayz_lidar_add_stream(lidar_handle, "ws://0.0.0.0:12369");
     }
   }
 

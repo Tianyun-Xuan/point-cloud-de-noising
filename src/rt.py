@@ -129,7 +129,7 @@ if __name__ == "__main__":
     # load model
 
     model = MistNet(4,4)
-    model.load_state_dict(torch.load('model.pth'))
+    model.load_state_dict(torch.load('/home/mist/models/0719/model.pth'))
 
     model.eval().to(device)
 

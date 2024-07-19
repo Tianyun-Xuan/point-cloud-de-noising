@@ -14,8 +14,7 @@
 #define RAYZ_PACKED __pragma(pack(push, 1)) __pragma(pack(pop))
 #endif
 
-#define RAYZ_SDK_VERSION "unknown_2406280339"
-#define RAYZ_SDK_VERSION "unknown_2406280339"
+#define RAYZ_SDK_VERSION "unknown_2407180939"
 
 #define M_PI_ 3.14159265358979323846264338327950288
 static const double kRangeResolution = 0.008;         // meter
@@ -237,10 +236,13 @@ typedef struct RAYZ_PACKED {
       unsigned short hline;  // horizontal block line, max 65536>>(flag[7:6]*2)
       unsigned char vline;   // vertical block line, max 256<<(flag[7:6]*2)
       unsigned char flag;
-      // bit[2:0]: near[0], echo[1-4], strong[5], far[6], 2echo[7], 3echo[8]
-      // bit[3]: reserve
-      // bit[4]: 0-ref mode, 1-thr mode
-      // bit[5]: 0:single pluse, 1: big-small pluse
+      // bit[2:0]: single return/dual return/triple return
+      //           first[0], strongest[1]
+      //           farthest[2], first-strongest[3],
+      //           first-second[4], first-farthest[5]
+      //           strongest-farthest[6], triple[7]
+      // bit[3]: 0-single pluse, 1-big-small pluse
+      // bit[5:4]: 0-ref mode, 1-ref_calib mode
       // bit[7:6]: reserve for split hline/vline bits
     } ext;  // should only work with RayzBlock
   };

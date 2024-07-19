@@ -27,7 +27,7 @@ add_executable(mistnode src/inference.cpp
                         src/main.cpp
                         src/mistnode.cpp)
 ament_target_dependencies(mistnode rclcpp std_msgs)
-target_link_libraries(mistnode nvinfer nvonnxparser nvinfer_plugin cudart rayz_lidar stdc++fs pthread dl)
+target_link_libraries(mistnode nvinfer nvonnxparser nvinfer_plugin cudart rayz_lidar stdc++fs pthread dl z)
 
 if(BUILD_TESTING)
   find_package(ament_lint_auto REQUIRED)

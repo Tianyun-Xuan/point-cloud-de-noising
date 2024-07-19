@@ -8,9 +8,9 @@ if __name__ == "__main__":
     optimizer = model.configure_optimizers()
     batch_size = 4
     # 创建训练、验证和测试数据加载器
-    train_loader = create_dataloader('data/train', batch_size)
-    val_loader = create_dataloader('data/train', batch_size)
-    test_loader = create_dataloader('data/train', batch_size)
+    train_loader = create_dataloader('data/verify', batch_size)
+    val_loader = create_dataloader('data/verify', batch_size)
+    test_loader = create_dataloader('data/verify', batch_size)
 
     print(torch.__version__)
     if torch.cuda.is_available():
@@ -22,7 +22,7 @@ if __name__ == "__main__":
     print(device)
 
     # 训练模型
-    train(model, train_loader, val_loader, optimizer, epochs=50, device=device)
+    train(model, train_loader, val_loader, optimizer, epochs=1, device=device)
 
     # save model
     torch.save(model.state_dict(), 'model.pth')
