@@ -22,6 +22,10 @@ class EvenBlock(nn.Module):
         branch1 = self.branch1(x)
         branch2 = self.branch2(x)
         branch3 = self.branch3(x)
+        # print("x.shape: ", x.shape)
+        # print("branch1.shape: ", branch1.shape)
+        # print("branch2.shape: ", branch2.shape)
+        # print("branch3.shape: ", branch3.shape)
 
         # self.pad_input = nn.ZeroPad2d(
         #     conv2d_get_padding(

@@ -3,10 +3,10 @@ import numpy as np
 
 # x y z row col range pluse echo （frame_id）[label]
 
-base_dir = "data/mist/jimu-2"  # 存放原始数据的目录 txt
-mark_dir = "data/mist/mark-2"  # 存放选中的水雾数据的目录 txt
-save_dir = "data/mist/label-2"  # 存放标记好的数据的目录 txt
-npy_dir = "data/mist/npy-2"  # 存放标记好的数据的目录 npy
+base_dir = "data/mist/jimu"  # 存放原始数据的目录 txt
+mark_dir = "data/mist/mark-1"  # 存放选中的水雾数据的目录 txt
+save_dir = "data/mist/label-1"  # 存放标记好的数据的目录 txt
+npy_dir = "data/mist/npy-1"  # 存放标记好的数据的目录 npy
 
 
 def markMistPoint(mistpoints, basepoints):
@@ -28,7 +28,7 @@ def markMistPoint(mistpoints, basepoints):
     return basepoints
 
 
-def markMistPoint(base_dir, mark_dir, save_dir, npy_dir):
+def markMistPoints(base_dir, mark_dir, save_dir):
     base_file = os.listdir(base_dir)
     # 排序
     base_file.sort()
@@ -101,6 +101,11 @@ def renameLabelFile(dir):
         if " - " in file:
             new_file = file.split(" - ")[0] + ".txt"
             os.rename(os.path.join(dir, file), os.path.join(dir, new_file))
+    files = os.listdir(dir)
+    for file in files:
+        if "_" in file:
+            new_file = file.split("_")[0] + ".txt"
+            os.rename(os.path.join(dir, file), os.path.join(dir, new_file))
 
 
 def remove_DS_Store(dir):
@@ -138,47 +143,120 @@ def generateNpyFile(label_dir, npy_dir):
             if flag == 1:
                 label_map[row, col] = int(label_map[row, col]) | mark
 
+        # print("First echo range : [{}, {}]".format(
+        #     np.min(first_echo_range), np.max(first_echo_range)))
+        # print("First echo pluse : [{}, {}]".format(
+        #     np.min(first_echo_pluse), np.max(first_echo_pluse)))
+        # print("Second echo range : [{}, {}]".format(
+        #     np.min(second_echo_range), np.max(second_echo_range)))
+        # print("Second echo pluse : [{}, {}]".format(
+        #     np.min(second_echo_pluse), np.max(second_echo_pluse)))
+
         # 拼接成(5, 128, 1200)
         data = np.stack(
             (first_echo_range, first_echo_pluse, second_echo_range, second_echo_pluse, label_map))
-        print(data.shape)
         np.save(os.path.join(npy_dir, file.split(".")[0] + ".npy"), data)
 
-generateNpyFile(save_dir, npy_dir)
 
-# def checkNpyFile(base_dir, npy_dir, check_dir):
-#     # 加载原始点云和npy中的标注，生成标注点云
-#     baseFiles = os.listdir(base_dir)
+def checkNpyFile(base_dir, npy_dir, check_dir):
+    # 加载原始点云和npy中的标注，生成标注点云
+    baseFiles = os.listdir(base_dir)
+    npyFiles = os.listdir(npy_dir)
+
+    for file in npyFiles:
+        id = file.split(".")[0]
+        baseFileName = os.path.join(base_dir, id + ".txt")
+        npyFileName = os.path.join(npy_dir, file)
+        if not os.path.exists(baseFileName):
+            print("Error: can't find the file : {}".format(baseFileName))
+            continue
+        if not os.path.exists(npyFileName):
+            print("Error: can't find the file : {}".format(npyFileName))
+            continue
+
+        basePoints = np.loadtxt(baseFileName).reshape(-1, 8)
+        # 拓展一列用于标记水雾
+        basePoints = np.hstack(
+            (basePoints, np.zeros((basePoints.shape[0], 1))))
+        npyData = np.load(npyFileName).reshape(5, 128, 1200)
+
+        label = npyData[4]
+
+        for point in basePoints:
+            row = int(point[3])
+            col = int(point[4])
+            echo = int(point[7])
+            mark = int(2 ** echo)
+            if int(label[row, col]) & mark:
+                point[8] = 1
+
+        saveFileName = os.path.join(check_dir, id + ".txt")
+        np.savetxt(saveFileName, basePoints, fmt="%.6f")
+
+
+def checkPredictionFile(label_dir, pred_dir, check_dir):
+    # 加载原始点云和npy中的标注，生成标注点云
+    labelFiles = os.listdir(label_dir)
+    predFiles = os.listdir(pred_dir)
+    labelFiles.sort()
+    predFiles.sort()
+
+    for i in range(len(labelFiles)):
+        labelFileName = os.path.join(label_dir, labelFiles[i])
+        predFileName = os.path.join(pred_dir, predFiles[i])
+        if not os.path.exists(labelFileName):
+            print("Error: can't find the file : {}".format(labelFileName))
+            continue
+        if not os.path.exists(predFileName):
+            print("Error: can't find the file : {}".format(predFileName))
+            continue
+
+        basePoints = np.loadtxt(labelFileName).reshape(-1, 8)
+        # 拓展一列用于标记水雾
+        basePoints = np.hstack(
+            (basePoints, np.zeros((basePoints.shape[0], 1))))
+        label = np.load(predFileName).reshape(128, 1200)
+
+        for point in basePoints:
+            row = int(point[3])
+            col = int(point[4])
+            echo = int(point[7])
+            mark = int(2 ** echo)
+            if int(label[row, col]) & mark:
+                point[8] = 1
+
+        saveFileName = os.path.join(check_dir, labelFiles[i])
+        np.savetxt(saveFileName, basePoints, fmt="%.6f")
+
+
+# markMistPoints(base_dir, mark_dir, save_dir)
+# generateNpyFile(save_dir, npy_dir)
+# checkNpyFile(base_dir, npy_dir, "data/mist/check-1")
+
+# def regroupeNpyfile(src_dir, dst_dir, mark):
+#     file = os.listdir(src_dir)
+#     # copy all file as "[mark]-[file]" to dst_dir
+#     for f in file:
+#         os.rename(os.path.join(src_dir, f), os.path.join(dst_dir, str(mark) + "-" + f))
+
+# regroupeNpyfile("data/mist/npy-1", "data/mist/npy", 1)
+# regroupeNpyfile("data/mist/npy-2", "data/mist/npy", 2)
+
+# def findBaseFile(base_dir_list, npy_dir, dst_dir):
 #     npyFiles = os.listdir(npy_dir)
-
 #     for file in npyFiles:
-#         id = file.split(".")[0]
-#         baseFileName = os.path.join(base_dir, id + ".txt")
-#         npyFileName = os.path.join(npy_dir, file)
+#         datasetID = int(file.split("-")[0]) - 1
+#         frameID = int(file.split("-")[1].split(".")[0])
+#         baseFileName = os.path.join(
+#             base_dir_list[datasetID], str(frameID) + ".txt")
 #         if not os.path.exists(baseFileName):
 #             print("Error: can't find the file : {}".format(baseFileName))
 #             continue
-#         if not os.path.exists(npyFileName):
-#             print("Error: can't find the file : {}".format(npyFileName))
-#             continue
 
-#         basePoints = np.loadtxt(baseFileName).reshape(-1, 8)
-#         # 拓展一列用于标记水雾
-#         basePoints = np.hstack(
-#             (basePoints, np.zeros((basePoints.shape[0], 1))))
-#         npyData = np.load(npyFileName).reshape(5, 128, 1200)
+#         dstFileName = os.path.join(
+#             dst_dir, "{}-{}.txt".format(datasetID + 1, frameID))
+#         # copy file
+#         os.system("cp {} {}".format(baseFileName, dstFileName))
 
-#         label = npyData[4]
-
-#         for point in basePoints:
-#             row = int(point[3])
-#             col = int(point[4])
-#             echo = int(point[7])
-#             mark = int(2 ** echo)
-#             if int(label[row, col]) & mark:
-#                 point[8] = 1
-
-#         saveFileName = os.path.join(check_dir, id + ".txt")
-#         np.savetxt(saveFileName, basePoints, fmt="%.6f")
-
-# checkNpyFile(base_dir, npy_dir, "data/mist/check-2")
+# findBaseFile(["data/mist/jimu", "data/mist/jimu-2"], "data/mist/npy", "data/mist/base")
+checkPredictionFile("data/mist/base", "data/pred", "data/mist/check")
