@@ -13,8 +13,10 @@ class EvenBlock(nn.Module):
         self.branch1 = BasicConv2d(
             in_channels, n, kernel_size=(7, 3), padding=(3, 1))
         self.branch2 = BasicConv2d(in_channels, n, kernel_size=3, padding=1)
+        # self.branch3 = BasicConv2d(
+        #     in_channels, n, kernel_size=(3, 7), padding=(1, 3))
         self.branch3 = BasicConv2d(
-            in_channels, n, kernel_size=(3, 7), padding=(1, 3))
+            in_channels, n, kernel_size=(5, 11), padding=(2, 5))
         # self.branch4 = BasicConv2d(in_channels, n, kernel_size=3, dilation=2)
         self.conv = BasicConv2d(n * 3, n, kernel_size=1)
 

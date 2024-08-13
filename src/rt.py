@@ -128,7 +128,7 @@ if __name__ == "__main__":
 
     # load model
 
-    model = MistNet(4,4)
+    model = MistNet(4, 4)
     model.load_state_dict(torch.load('/home/mist/models/0719/model.pth'))
 
     model.eval().to(device)
@@ -156,7 +156,7 @@ if __name__ == "__main__":
     onnx_path = "model.onnx"
 
     torch.onnx.export(model, dummy_input, onnx_path, verbose=True,
-                      input_names=input_names, output_names=output_names, opset_version = 17)
+                      input_names=input_names, output_names=output_names, opset_version=17)
 
     infer_onnx(onnx_path, test_loader)
 

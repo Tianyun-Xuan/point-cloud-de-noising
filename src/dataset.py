@@ -14,27 +14,24 @@ class NPYDataset(Dataset):
     def __getitem__(self, idx):
         data_path = self.data_files[idx]
         data = np.load(data_path)
-        # # print("data.shape: ", data.shape)
-        # data[0, :, :] = data[0, :, :] / 64
-        # data[2, :, :] = data[2, :, :] / 64
-        # control the range of the data to [0, 1023]
-        # data[0, :, :] = np.clip(data[0, :, :], 0, 1023)
-        # data[2, :, :] = np.clip(data[2, :, :], 0, 1023)
-        # print("echo 1 range : [{}, {}]".format(
-        #     np.min(data[0, :, :]), np.max(data[0, :, :])))
-        # print("echo 1 pluse : [{}, {}]".format(
-        #     np.min(data[1, :, :]), np.max(data[1, :, :])))
-        # print("echo 2 range : [{}, {}]".format(
-        #     np.min(data[2, :, :]), np.max(data[2, :, :])))
-        # print("echo 2 pluse : [{}, {}]".format(
-        #     np.min(data[3, :, :]), np.max(data[3, :, :])))
-        input_data = torch.tensor(data[:4], dtype=torch.float32)  # 前4个维度作为输入
-        label = torch.tensor(data[4], dtype=torch.long)  # 最后1个维度作为标签
+        # [x y z range pluse] * 2 + label
+
+        pre_input = data[[0, 1, 2], :, :]
+        pre_label = data[-1, :, :]
+        pre_label[pre_label == 2] = 0
+        pre_label[pre_label == 3] = 1
+
+        input_data = torch.tensor(pre_input, dtype=torch.float32)  # 前4个维度作为输入
+        label = torch.tensor(pre_label, dtype=torch.long)  # 最后1个维度作为标签
         return input_data, label
 
 
-def create_dataloader(data_dir, batch_size=4):
-    npy_files = [os.path.join(data_dir, f)
-                 for f in os.listdir(data_dir) if f.endswith('.npy')]
+def create_dataloader(data_dir_list, batch_size=4):
+    # data_dir_list
+    npy_files = []
+    for data_dir in data_dir_list:
+        current_files = [os.path.join(data_dir, f)
+                         for f in os.listdir(data_dir) if f.endswith('.npy')]
+        npy_files.extend(current_files)
     dataset = NPYDataset(npy_files)
-    return DataLoader(dataset, batch_size=batch_size, shuffle=False)
+    return DataLoader(dataset, batch_size=batch_size, shuffle=True)
