@@ -399,13 +399,13 @@ def checkPredictionFile(npy_dir, pred_dir, check_dir):
                     z = depth[2, row, col]
                     pluse = depth[4, row, col]
                     label_1 = label[row, col]
-                    result.append([x, y, z, range_1, pluse, 0, label_1])
+                    result.append([x, y, z, row, col, range_1, pluse, 0, label_1])
                 if range_2 > 0:
                     x = depth[5, row, col]
                     y = depth[6, row, col]
                     z = depth[7, row, col]
                     pluse = depth[9, row, col]
-                    result.append([x, y, z, range_2, pluse, 1, 0])
+                    result.append([x, y, z, row, col, range_2, pluse, 1, 0])
 
         result = np.array(result).reshape(-1, 5)
         np.savetxt(os.path.join(check_dir, "{}.txt".format(id)),
