@@ -1,4 +1,4 @@
-#include <../include/mistnet/inference.h>
+#include <../include/inference.h>
 
 #include <chrono>
 #include <filesystem>

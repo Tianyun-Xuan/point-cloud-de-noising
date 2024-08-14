@@ -14,7 +14,7 @@
 #define RAYZ_PACKED __pragma(pack(push, 1)) __pragma(pack(pop))
 #endif
 
-#define RAYZ_SDK_VERSION "unknown_2407180939"
+#define RAYZ_SDK_VERSION "unknown_2408060244"
 
 #define M_PI_ 3.14159265358979323846264338327950288
 static const double kRangeResolution = 0.008;         // meter

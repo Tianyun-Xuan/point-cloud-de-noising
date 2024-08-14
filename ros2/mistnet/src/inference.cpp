@@ -1,4 +1,4 @@
-#include <../include/mistnet/inference.h>
+#include <../include/inference.h>
 
 // Constructor
 Inference::Inference(const std::string &engineFile) {
