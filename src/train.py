@@ -7,11 +7,12 @@ if __name__ == "__main__":
     model = MistNet(num_classes=num_classes, in_channels=3)
     optimizer = model.configure_optimizers()
     batch_size = 4
+    
     # 创建训练、验证和测试数据加载器
     train_loader = create_dataloader(
-        ["data/gnpy"], batch_size)
-    val_loader = create_dataloader(["data/gnpy"], batch_size)
-    test_loader = create_dataloader(["data/gnpy"], batch_size)
+        ["data/0/gnpy","data/8/gnpy"], batch_size)
+    val_loader = create_dataloader(["data/5/gnpy"], batch_size)
+    test_loader = create_dataloader(["data/5/gnpy"], batch_size)
 
     print(torch.__version__)
     if torch.cuda.is_available():
