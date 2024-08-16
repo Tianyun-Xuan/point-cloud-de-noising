@@ -68,10 +68,20 @@ import os
 
 def infer_torch(model_path, test_dir):
 
+
+    print(torch.__version__)
+    if torch.cuda.is_available():
+        device = "cuda"
+    elif torch.backends.mps.is_available():
+        device = "mps"
+    else:
+        device = "cpu"
+    print(device)
+
     # load model
     model = MistNet(2, 3)
     model.load_state_dict(torch.load('model.pth'))
-    model.eval().to("mps")
+    model.eval().to(device)
 
     precisions = []
     recalls = []
@@ -86,12 +96,12 @@ def infer_torch(model_path, test_dir):
         pre_label[pre_label == 3] = 1
         input_data = np.array(pre_input).reshape(1, 3, 128, 1200).astype(np.float32)
         labels = np.array(pre_label).reshape(128, 1200).astype(np.float32)
-        input_data = torch.tensor(input_data, dtype=torch.float32).to("mps")
+        input_data = torch.tensor(input_data, dtype=torch.float32).to(device)
         output = model(input_data)
         output = output.cpu().detach().numpy()
         predictions = np.argmax(output, axis=1).reshape(128, 1200)
 
-        np.save(os.path.join('data/pred', file), predictions)
+        # np.save(os.path.join('data/pred', file), predictions)
 
         # precison and recall
         precision = np.zeros(2)
@@ -128,4 +138,4 @@ def infer_torch(model_path, test_dir):
     #     np.min(recalls[:, 3]), np.max(recalls[:, 3])))
 
 
-infer_torch('model.pth', "data/mist/npy")
+infer_torch('model_class4_50.pth', "data/gnpy")

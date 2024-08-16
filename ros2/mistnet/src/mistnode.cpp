@@ -67,7 +67,7 @@ class MistNode : public rclcpp::Node {
                                        config_.lidar_model.c_str());
 
     if (lidar_handle >= 0) {
-      rayz_lidar_set_config(lidar_handle, "rewind", "-1", (char*)"int");
+      // rayz_lidar_set_config(lidar_handle, "rewind", "-1", (char*)"int");
 
       if (config_.output_type == "fresh") {
         rayz_lidar_set_callback(lidar_handle, data_callback_fresh_wrapper,

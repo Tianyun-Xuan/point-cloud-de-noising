@@ -128,8 +128,8 @@ if __name__ == "__main__":
 
     # load model
 
-    model = MistNet(4, 4)
-    model.load_state_dict(torch.load('/home/mist/models/0719/model.pth'))
+    model = MistNet(2, 3)
+    model.load_state_dict(torch.load('model.pth'))
 
     model.eval().to(device)
 
@@ -145,10 +145,10 @@ if __name__ == "__main__":
     # # }
     # # model_int8 = quantize_dynamic(model, qconfig_spec, dtype=torch.qint8)
 
-    test_loader = create_dataloader('data/verify/', 1)
+    # test_loader = create_dataloader('data/verify/', 1)
     # test(model, test_loader, device=device)
 
-    dummy_input = torch.randn(1, 4, 128, 1200).to(device)
+    dummy_input = torch.randn(1, 3, 128, 1200).to(device)
 
     # onnx model float32
     input_names = ["input"]
@@ -158,7 +158,7 @@ if __name__ == "__main__":
     torch.onnx.export(model, dummy_input, onnx_path, verbose=True,
                       input_names=input_names, output_names=output_names, opset_version=17)
 
-    infer_onnx(onnx_path, test_loader)
+    # infer_onnx(onnx_path, test_loader)
 
     # infer_single_frame("models/0701/model.onnx", np.load("data/8/npy/27628.npy").reshape(5,128,1200))
     # infer_single_frame("models/0703/model.onnx", np.load("data/8/npy/27628.npy").reshape(5,128,1200))
