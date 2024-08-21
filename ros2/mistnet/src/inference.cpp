@@ -35,8 +35,8 @@ Inference::Inference(const std::string &engineFile) {
   // Allocate memory for inputs and outputs
   inputIndex = engine->getBindingIndex("input");
   outputIndex = engine->getBindingIndex("output");
-  inputSize = 1 * 4 * 128 * 1200 * sizeof(float);
-  outputSize = 1 * 4 * 128 * 1200 * sizeof(float);
+  inputSize = 1 * 3 * 128 * 1200 * sizeof(float);
+  outputSize = 1 * 3 * 128 * 1200 * sizeof(float);
   if (cudaMalloc(&buffers[inputIndex], inputSize) != 0) {
     std::cerr << "Failed to malloc input buffer" << std::endl;
     exit(-1);
@@ -82,12 +82,12 @@ std::vector<char> Inference::loadEngine(const std::string &engineFile) {
 int Inference::infer(const std::vector<float> &input,
                      std::vector<float> &output) {
   // check input & output size
-  if (input.size() != 1 * 4 * 128 * 1200) {
+  if (input.size() != 1 * 3 * 128 * 1200) {
     std::cerr << "Input size mismatch" << std::endl;
     return -1;
   }
 
-  if (output.size() != 1 * 4 * 128 * 1200) {
+  if (output.size() != 1 * 3 * 128 * 1200) {
     std::cerr << "Output size mismatch" << std::endl;
     return -1;
   }

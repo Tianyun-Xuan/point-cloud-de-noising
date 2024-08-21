@@ -16,9 +16,9 @@ def generate_launch_description():
             parameters=[
                 {"engine_file": "/home/rayz/code/engine.trt"},
                 {"lidar_model": "m2w"},
-                {"input_channel": "/home/rayz/code/data/record/caijian2.pcap"},
+                {"input_channel": "udp://0.0.0.0:2368"},
                 {"output_channel": "ws://0.0.0.0:12369"},
-                {"output_type": "mark"},
+                {"output_type": "fresh"},
                 {"debug": True},
                 {"protocol": 6}
             ]

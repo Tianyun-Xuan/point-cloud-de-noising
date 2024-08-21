@@ -14,11 +14,11 @@ def generate_launch_description():
             name='mistnode',
             output='screen',
             parameters=[
-                {"engine_file": "/home/rayz/code/engine_fp16.trt"},
+                {"engine_file": "/home/rayz/code/engine.trt"},
                 {"lidar_model": "m2w"},
                 {"input_channel": "udp://0.0.0.0:2368"},
                 {"output_channel": "ws://0.0.0.0:12369"},
-                {"output_type": "fresh"},
+                {"output_type": "mark"},
                 {"debug": True},
                 {"protocol": 6}
 

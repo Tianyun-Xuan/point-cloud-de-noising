@@ -4,14 +4,14 @@
 #include <filesystem>
 
 void argmax(const std::vector<float> &output, std::vector<int> &result) {
-  // 4 * 128 * 1200 argmax dim=0 -> 128 * 1200
+  // 3wen * 128 * 1200 argmax dim=0 -> 128 * 1200
   result.resize(128 * 1200);
   std::vector<float> result_float(128 * 1200);
 
   for (int i = 0; i < 128 * 1200; i++) {
     int max_idx = 0;
     float max_val = output[i];
-    for (int j = 1; j < 4; j++) {
+    for (int j = 1; j < 3; j++) {
       if (output[i + j * 128 * 1200] > max_val) {
         max_val = output[i + j * 128 * 1200];
         max_idx = j;
@@ -41,7 +41,7 @@ int load_txt_input(const std::string &input_file, std::vector<float> &input,
   // first 4 rows are the input data
   // last row is the label
 
-  input.resize(4 * 128 * 1200);
+  input.resize(3 * 128 * 1200);
   label.resize(128 * 1200);
 
   std::ifstream file(input_file);
@@ -50,7 +50,7 @@ int load_txt_input(const std::string &input_file, std::vector<float> &input,
     return -1;
   }
 
-  for (int i = 0; i < 4 * 128 * 1200; i++) {
+  for (int i = 0; i < 3 * 128 * 1200; i++) {
     file >> input[i];
   }
 
@@ -74,9 +74,9 @@ void local_test(const std::string &engineFile, const std::string &val_dir) {
   Inference inference(engineFile);
   inference.printModelInfo();
 
-  std::vector<float> input(1 * 4 * 128 * 1200, 1.0f);
-  std::vector<float> output(1 * 4 * 128 * 1200);
-  std::vector<float> label(1 * 4 * 128 * 1200);
+  std::vector<float> input(1 * 3 * 128 * 1200, 1.0f);
+  std::vector<float> output(1 * 3 * 128 * 1200);
+  std::vector<float> label(1 * 3 * 128 * 1200);
   std::vector<int> result(1 * 128 * 1200);
 
   const auto &test_size = valfiles.size();

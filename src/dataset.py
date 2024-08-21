@@ -99,5 +99,17 @@ class DataAugment:
         return points
 
     def __call__(self, input_data, label):
-        input_data = self.random_augmentation(input_data)
+        # input_data = self.random_augmentation(input_data)
+        seed = np.random.randint(0,4)
+        if seed == 1:
+            input_data = np.flip(input_data,axis=2).copy()
+            label = np.flip(label, axis=1).copy()
+        elif seed == 2:
+            input_data = np.flip(input_data,axis=1).copy()
+            label = np.flip(label, axis=0).copy()
+        elif seed == 3:
+            input_data = np.flip(input_data,axis=2).copy()
+            label = np.flip(label, axis=1).copy()
+            input_data = np.flip(input_data,axis=1).copy()
+            label = np.flip(label, axis=0).copy()
         return input_data, label

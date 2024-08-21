@@ -10,9 +10,9 @@ if __name__ == "__main__":
     
     # 创建训练、验证和测试数据加载器
     train_loader = create_dataloader(
-        ["data/0/gnpy","data/8/gnpy"], batch_size)
-    val_loader = create_dataloader(["data/5/gnpy"], batch_size)
-    test_loader = create_dataloader(["data/5/gnpy"], batch_size)
+        ["data/Unet/0/gnpy"], batch_size)
+    val_loader = create_dataloader(["data/Unet/0/gnpy"], batch_size)
+    test_loader = create_dataloader(["data/Unet/0/gnpy"], batch_size)
 
     print(torch.__version__)
     if torch.cuda.is_available():
@@ -24,7 +24,7 @@ if __name__ == "__main__":
     print(device)
 
     # 训练模型
-    train(model, train_loader, val_loader, optimizer, epochs=50, device=device)
+    train(model, train_loader, val_loader, optimizer, epochs=20, device=device)
 
     # save model
     torch.save(model.state_dict(), 'model.pth')
